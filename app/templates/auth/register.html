@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TasteFlow – Create Account</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand:    '#C84C2E',
+            'brand-dk':'#a83920',
+            herb:     '#87B42D',
+            cream:    '#FDF4E3',
+            charcoal: '#2C2C2C',
+            body:     '#4A4A4A',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; }
+
+    .tf-input {
+      border: 1.5px solid #e5e7eb;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .tf-input:focus {
+      outline: none;
+      border-color: #C84C2E;
+      box-shadow: 0 0 0 3px rgba(200,76,46,.12);
+      background: #fff;
+    }
+    .tf-input::placeholder { color: #9ca3af; }
+    .tf-input.error { border-color: #ef4444; }
+
+    /* Role toggle cards */
+    .role-card {
+      border: 2px solid #e5e7eb;
+      cursor: pointer;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .role-card:hover { border-color: #C84C2E; box-shadow: 0 2px 12px rgba(200,76,46,.1); }
+    .role-card.selected {
+      border-color: #C84C2E;
+      background: rgba(200,76,46,.04);
+      box-shadow: 0 0 0 3px rgba(200,76,46,.1);
+    }
+    .role-card .role-icon {
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .role-card.selected .role-icon {
+      background: #C84C2E;
+      color: #fff;
+    }
+    .role-card .check-dot {
+      width: 18px; height: 18px;
+      border: 2px solid #e5e7eb;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+    .role-card.selected .check-dot {
+      border-color: #C84C2E;
+      background: #C84C2E;
+    }
+
+    /* Extra fields slide */
+    .extra-fields {
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.35s ease, opacity 0.3s ease;
+    }
+    .extra-fields.open {
+      max-height: 320px;
+      opacity: 1;
+    }
+
+    .btn-primary {
+      background: #C84C2E;
+      color: #fff;
+      font-weight: 700;
+      transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #a83920;
+      transform: scale(1.02);
+      box-shadow: 0 8px 24px rgba(200,76,46,.32);
+    }
+    .btn-primary:active:not(:disabled) { transform: scale(0.99); }
+    .btn-primary:disabled { opacity: 0.8; cursor: not-allowed; }
+
+    .eye-btn { transition: color 0.15s ease; }
+    .eye-btn:hover { color: #C84C2E; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card-enter { animation: slideUp 0.45s ease forwards; }
+
+    /* Progress steps */
+    .step-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+      transition: background 0.25s, color 0.25s;
+    }
+    .step-line { flex: 1; height: 2px; transition: background 0.25s; }
+
+    /* Password strength bar */
+    .strength-bar {
+      height: 4px;
+      border-radius: 2px;
+      transition: width 0.35s ease, background 0.35s ease;
+    }
+
+    /* Toast */
+    #toast {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      transform: translateX(-50%) translateY(6px);
+    }
+    #toast.show { opacity: 1 !important; transform: translateX(-50%) translateY(0) !important; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.7s linear infinite; display: inline-block; }
+
+    .social-btn {
+      border: 1.5px solid #e5e7eb;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    }
+    .social-btn:hover {
+      border-color: #C84C2E;
+      box-shadow: 0 2px 12px rgba(200,76,46,.13);
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-cream antialiased flex items-start justify-center py-10 px-4">
+
+  <!-- Back to login -->
+  <a href="/login"
+    class="fixed top-5 left-5 z-50 flex items-center gap-2 text-sm font-semibold text-body hover:text-brand transition-colors bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
+    <i class="fa-solid fa-arrow-left text-xs"></i> Sign In
+  </a>
+
+  <div class="card-enter w-full max-w-[480px]">
+
+    <!-- Logo -->
+    <div class="flex items-center justify-center gap-2 mb-7">
+      <span class="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white font-black text-sm">T</span>
+      <span class="text-xl font-extrabold text-brand tracking-tight">TasteFlow</span>
+    </div>
+
+    <!-- Card -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 sm:p-10">
+
+      <!-- Header -->
+      <div class="mb-8">
+        <h1 class="text-2xl sm:text-[26px] font-extrabold text-charcoal tracking-tight">Create your account</h1>
+        <p class="text-body text-sm mt-1.5">Join TasteFlow and get your first delivery in minutes.</p>
+      </div>
+
+      <!-- ── Role selection ── -->
+      <p class="text-xs font-semibold text-charcoal mb-3 uppercase tracking-wider">I am joining as a…</p>
+      <div class="grid grid-cols-2 gap-3 mb-7">
+
+        <!-- Customer -->
+        <div id="role-customer" class="role-card selected rounded-xl p-4 flex flex-col gap-3" onclick="selectRole('customer')">
+          <div class="flex items-center justify-between">
+            <div class="role-icon w-9 h-9 rounded-lg bg-brand/10 text-brand flex items-center justify-center text-base">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="check-dot">
+              <i class="fa-solid fa-check text-white" style="font-size:9px;"></i>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-charcoal">Customer</p>
+            <p class="text-xs text-body mt-0.5 leading-snug">Order food from local restaurants</p>
+          </div>
+        </div>
+
+        <!-- Restaurant Owner -->
+        <div id="role-owner" class="role-card rounded-xl p-4 flex flex-col gap-3" onclick="selectRole('owner')">
+          <div class="flex items-center justify-between">
+            <div class="role-icon w-9 h-9 rounded-lg bg-brand/10 text-brand flex items-center justify-center text-base">
+              <i class="fa-solid fa-store"></i>
+            </div>
+            <div class="check-dot">
+              <i class="fa-solid fa-check text-white" style="font-size:9px;"></i>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-charcoal">Restaurant Owner</p>
+            <p class="text-xs text-body mt-0.5 leading-snug">List &amp; manage your restaurant</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Form ── -->
+      <form id="register-form" onsubmit="handleRegister(event)" novalidate>
+
+        <!-- Name row -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label class="block text-xs font-semibold text-charcoal mb-1.5" for="fname">First Name</label>
+            <input id="fname" type="text" placeholder="Ada" autocomplete="given-name"
+              class="tf-input w-full px-3.5 py-3 rounded-xl text-sm text-charcoal bg-gray-50/80"/>
+            <p id="fname-err" class="text-red-500 text-xs mt-1 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i>Required</p>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-charcoal mb-1.5" for="lname">Last Name</label>
+            <input id="lname" type="text" placeholder="Okafor" autocomplete="family-name"
+              class="tf-input w-full px-3.5 py-3 rounded-xl text-sm text-charcoal bg-gray-50/80"/>
+            <p id="lname-err" class="text-red-500 text-xs mt-1 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i>Required</p>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-charcoal mb-1.5" for="email">Email Address</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"><i class="fa-regular fa-envelope"></i></span>
+            <input id="email" type="email" placeholder="you@example.com" autocomplete="email"
+              class="tf-input w-full pl-10 pr-4 py-3 rounded-xl text-sm text-charcoal bg-gray-50/80"/>
+          </div>
+          <p id="email-err" class="text-red-500 text-xs mt-1 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i>Please enter a valid email.</p>
+        </div>
+
+        <!-- Phone -->
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-charcoal mb-1.5" for="phone">Phone Number</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"><i class="fa-solid fa-phone"></i></span>
+            <input id="phone" type="tel" placeholder="+234 800 000 0000" autocomplete="tel"
+              class="tf-input w-full pl-10 pr-4 py-3 rounded-xl text-sm text-charcoal bg-gray-50/80"/>
+          </div>
+          <p id="phone-err" class="text-red-500 text-xs mt-1 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i>Please enter a valid phone number.</p>
+        </div>
+
+        <!-- Restaurant-owner extra fields -->
+        <div id="owner-fields" class="extra-fields">
+          <div class="mb-4">
+            <label class="block text-xs font-semibold text-charcoal mb-1.5" for="biz-name">Restaurant Name</label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"><i class="fa-solid fa-utensils"></i></span>
+              <input id="biz-name" type="text" placeholder="e.g. Burger Haven"
+                class="tf-input w-full pl-10 pr-4 py-3 rounded-xl text-sm text-charcoal bg-gray-50/80"/>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="block text-xs font-semibold text-charcoal mb-1.5" for="biz-address">Restaurant Address</label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"><i class="fa-solid fa-location-dot"></i></span>
+              <input id="biz-address" type="text" placeholder="123 Main Street, Lagos"
+                class="tf-input w-full pl-10 pr-4 py-3 rounded-xl text-sm text-charcoal bg-gray-50/80"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-1">
+          <label class="block text-xs font-semibold text-charcoal mb-1.5" for="password">Password</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"><i class="fa-solid fa-lock"></i></span>
+            <input id="password" type="password" placeholder="At least 8 characters" autocomplete="new-password"
+              class="tf-input w-full pl-10 pr-11 py-3 rounded-xl text-sm text-charcoal bg-gray-50/80"
+              oninput="checkStrength(this.value)"/>
+            <button type="button" class="eye-btn absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
+              onclick="togglePw('password','eye1')" aria-label="Toggle password">
+              <i id="eye1" class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+          <!-- Strength indicator -->
+          <div class="mt-2 flex gap-1.5">
+            <div id="bar1" class="strength-bar w-1/4 bg-gray-200"></div>
+            <div id="bar2" class="strength-bar w-1/4 bg-gray-200"></div>
+            <div id="bar3" class="strength-bar w-1/4 bg-gray-200"></div>
+            <div id="bar4" class="strength-bar w-1/4 bg-gray-200"></div>
+          </div>
+          <p id="strength-label" class="text-xs text-gray-400 mt-1"></p>
+          <p id="pw-err" class="text-red-500 text-xs mt-1 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i>Password must be at least 8 characters.</p>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="mt-4 mb-6">
+          <label class="block text-xs font-semibold text-charcoal mb-1.5" for="confirm">Confirm Password</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"><i class="fa-solid fa-lock"></i></span>
+            <input id="confirm" type="password" placeholder="Re-enter password" autocomplete="new-password"
+              class="tf-input w-full pl-10 pr-11 py-3 rounded-xl text-sm text-charcoal bg-gray-50/80"/>
+            <button type="button" class="eye-btn absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
+              onclick="togglePw('confirm','eye2')" aria-label="Toggle confirm password">
+              <i id="eye2" class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+          <p id="confirm-err" class="text-red-500 text-xs mt-1 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i>Passwords do not match.</p>
+        </div>
+
+        <!-- Terms -->
+        <label class="flex items-start gap-3 mb-7 cursor-pointer group">
+          <input id="terms" type="checkbox" class="mt-0.5 w-4 h-4 accent-brand cursor-pointer"/>
+          <span class="text-xs text-body leading-relaxed">
+            I agree to TasteFlow's
+            <a href="#" class="text-brand font-semibold hover:underline">Terms of Service</a> and
+            <a href="#" class="text-brand font-semibold hover:underline">Privacy Policy</a>.
+          </span>
+        </label>
+        <p id="terms-err" class="text-red-500 text-xs -mt-5 mb-5 hidden"><i class="fa-solid fa-circle-exclamation mr-1"></i>You must agree to the terms to continue.</p>
+
+        <!-- Submit -->
+        <button id="reg-btn" type="submit"
+          class="btn-primary w-full py-3.5 rounded-xl text-sm flex items-center justify-center gap-2">
+          <span id="reg-label">Create Account</span>
+          <i id="reg-icon" class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+
+      </form>
+
+      <!-- Divider -->
+      <div class="flex items-center gap-3 my-6">
+        <div class="flex-1 h-px bg-gray-200"></div>
+        <span class="text-xs text-gray-400 font-medium">or sign up with</span>
+        <div class="flex-1 h-px bg-gray-200"></div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-7">
+        <button class="social-btn flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-charcoal bg-white">
+          <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.6 2.2 30.1 0 24 0 14.8 0 6.9 5.4 3 13.3l7.8 6C12.6 13.1 17.9 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.4 5.5-5 7.2l7.8 6C43.8 37.5 46.5 31.4 46.5 24.5z"/><path fill="#FBBC05" d="M10.8 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7L2.5 13.3A23.9 23.9 0 0 0 0 24c0 3.8.9 7.4 2.5 10.7l8.3-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.8-6c-2 1.4-4.6 2.2-7.4 2.2-6.1 0-11.4-3.6-13.2-9.3l-7.8 6C6.9 42.6 14.8 48 24 48z"/></svg>
+          Google
+        </button>
+        <button class="social-btn flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-charcoal bg-white">
+          <i class="fa-brands fa-apple text-base leading-none"></i> Apple
+        </button>
+      </div>
+
+      <div class="h-px bg-gray-100 mb-6"></div>
+
+      <p class="text-center text-sm text-body">
+        Already have an account?
+        <a href="/login" class="text-brand font-semibold hover:underline ml-1">Sign in</a>
+      </p>
+
+    </div>
+  </div>
+
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-6 left-1/2 opacity-0 pointer-events-none z-50
+  flex items-center gap-2.5 px-5 py-3 rounded-full shadow-xl text-white text-sm font-medium whitespace-nowrap"
+  style="background:#2C2C2C;">
+  <i id="toast-icon" class="fa-solid fa-circle-check text-herb text-base"></i>
+  <span id="toast-msg"></span>
+</div>
+
+
+<script>
+  let currentRole = 'customer';
+
+  function selectRole(role) {
+    currentRole = role;
+    document.getElementById('role-customer').classList.toggle('selected', role === 'customer');
+    document.getElementById('role-owner').classList.toggle('selected', role === 'owner');
+    const ownerFields = document.getElementById('owner-fields');
+    ownerFields.classList.toggle('open', role === 'owner');
+  }
+
+  function togglePw(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon  = document.getElementById(iconId);
+    const show  = input.type === 'password';
+    input.type  = show ? 'text' : 'password';
+    icon.className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+  }
+
+  function checkStrength(val) {
+    const bars   = [1,2,3,4].map(i => document.getElementById('bar'+i));
+    const label  = document.getElementById('strength-label');
+    const colors = { 1:'#ef4444', 2:'#f97316', 3:'#eab308', 4:'#22c55e' };
+    const labels = { 1:'Weak', 2:'Fair', 3:'Good', 4:'Strong' };
+
+    let score = 0;
+    if (val.length >= 8)              score++;
+    if (/[A-Z]/.test(val))            score++;
+    if (/[0-9]/.test(val))            score++;
+    if (/[^A-Za-z0-9]/.test(val))     score++;
+
+    bars.forEach((b, i) => {
+      b.style.background = i < score ? colors[score] : '#e5e7eb';
+    });
+    label.textContent = val.length === 0 ? '' : labels[score] || 'Weak';
+    label.style.color = val.length === 0 ? '' : colors[score] || colors[1];
+  }
+
+  function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+  function isValidPhone(v) { return /^\+?[\d\s\-()]{7,}$/.test(v.trim()); }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    let valid = true;
+
+    const fname   = document.getElementById('fname');
+    const lname   = document.getElementById('lname');
+    const email   = document.getElementById('email');
+    const phone   = document.getElementById('phone');
+    const pw      = document.getElementById('password');
+    const confirm = document.getElementById('confirm');
+    const terms   = document.getElementById('terms');
+    
+    // Owner specific fields
+    const bizName = document.getElementById('biz-name');
+    const bizAddress = document.getElementById('biz-address');
+
+    // Reset errors
+    ['fname','lname','email','phone','pw','confirm','terms'].forEach(id => {
+      document.getElementById(id+'-err').classList.add('hidden');
+    });
+    [fname, lname, email, phone, pw, confirm].forEach(el => el.classList.remove('error'));
+    if (bizName) bizName.classList.remove('error');
+    if (bizAddress) bizAddress.classList.remove('error');
+
+    if (!fname.value.trim()) { document.getElementById('fname-err').classList.remove('hidden'); fname.classList.add('error'); valid=false; }
+    if (!lname.value.trim()) { document.getElementById('lname-err').classList.remove('hidden'); lname.classList.add('error'); valid=false; }
+    if (!isValidEmail(email.value)) { document.getElementById('email-err').classList.remove('hidden'); email.classList.add('error'); valid=false; }
+    if (!isValidPhone(phone.value)) { document.getElementById('phone-err').classList.remove('hidden'); phone.classList.add('error'); valid=false; }
+    if (pw.value.length < 8) { document.getElementById('pw-err').classList.remove('hidden'); pw.classList.add('error'); valid=false; }
+    if (confirm.value !== pw.value || confirm.value === '') { document.getElementById('confirm-err').classList.remove('hidden'); confirm.classList.add('error'); valid=false; }
+    if (!terms.checked) { document.getElementById('terms-err').classList.remove('hidden'); valid=false; }
+
+    // Validate owner fields if owner role is selected
+    if (currentRole === 'owner') {
+      if (!bizName.value.trim()) { bizName.classList.add('error'); valid=false; }
+      if (!bizAddress.value.trim()) { bizAddress.classList.add('error'); valid=false; }
+    }
+
+    if (!valid) return;
+
+    const btn   = document.getElementById('reg-btn');
+    const label = document.getElementById('reg-label');
+    const icon  = document.getElementById('reg-icon');
+    btn.disabled = true;
+    label.textContent = 'Creating account…';
+    icon.className = 'spinner fa-solid fa-circle-notch text-xs';
+
+    // Build the payload mapping HTML fields to Flask backend fields
+    const payload = {
+      name: `${fname.value.trim()} ${lname.value.trim()}`,
+      email: email.value.trim(),
+      phone: phone.value.trim(),
+      password: pw.value,
+      role: currentRole
+    };
+
+    if (currentRole === 'owner') {
+      payload.restaurant_name = bizName.value.trim();
+      payload.restaurant_address = bizAddress.value.trim();
+    }
+
+    try {
+      const response = await fetch('/auth/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await response.json();
+
+      if (!response.ok) {
+        // e.g., "Email already exists"
+        showToast(data.error || 'Registration failed', 'error');
+        btn.disabled = false;
+        label.textContent = 'Create Account';
+        icon.className = 'fa-solid fa-arrow-right text-xs';
+        return;
+      }
+
+      // Success
+      const roleLabel = currentRole === 'owner' ? 'Restaurant Owner' : 'Customer';
+      showToast(`Account created as ${roleLabel} — welcome aboard! 🎉`, 'success');
+      
+      setTimeout(() => {
+        window.location.href = currentRole === 'owner' ? '/owner/dashboard' : '/';
+      }, 1500);
+
+    } catch (error) {
+      console.error('Registration error:', error);
+      showToast('A network error occurred. Please try again.', 'error');
+      btn.disabled = false;
+      label.textContent = 'Create Account';
+      icon.className = 'fa-solid fa-arrow-right text-xs';
+    }
+  }
+
+  function showToast(msg, type) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-icon').className = type === 'success'
+      ? 'fa-solid fa-circle-check text-herb text-base'
+      : 'fa-solid fa-circle-xmark text-red-400 text-base';
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3600);
+  }
+</script>
+</body>
+</html>

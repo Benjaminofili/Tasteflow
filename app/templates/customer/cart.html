@@ -1,0 +1,340 @@
+{% extends 'customer/base.html' %}
+
+{% block title %}TasteFlow – Cart{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Premium Cart styling */
+  .qty-btn { 
+    border: 1.5px solid #e2d5c3; 
+    background: white; 
+    color: var(--charcoal); 
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qty-btn:hover { border-color: var(--primary); color: var(--primary); transform: scale(1.1); }
+  .qty-btn:active { transform: scale(0.9); }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .item-row { animation: fadeUp 0.4s ease both; }
+
+  /* Glassmorphism Summary */
+  .summary-card { 
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1.5px solid #f0e8d8;
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.04);
+  }
+  .divider-dashed { border-top: 1.5px dashed #e2d5c3; }
+
+  .checkout-btn { 
+    background: var(--primary); 
+    color: white; 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    box-shadow: 0 8px 25px rgba(200,76,46,0.25);
+  }
+  .checkout-btn:hover { background: #a83a1e; transform: translateY(-2px); box-shadow: 0 12px 30px rgba(200,76,46,0.35); }
+  .checkout-btn:active { transform: translateY(0); }
+
+  /* Progress Steps */
+  .prog-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; transition: all 0.3s ease; }
+  .circle-done { background: var(--primary); color: white; }
+  .circle-idle { background: #e8ddd0; color: #b0a090; }
+  .circle-active { background: var(--primary); color: white; box-shadow: 0 0 0 4px rgba(200,76,46,0.15); }
+  .prog-line { height: 2px; flex: 1; background: #e8ddd0; margin-bottom: 24px; transition: all 0.3s ease; }
+  .line-done { background: var(--primary); }
+
+  /* Shimmer */
+  @keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
+  .skeleton {
+    background: #f6f7f8;
+    background-image: linear-gradient(90deg, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+    background-repeat: no-repeat;
+    background-size: 800px 104px;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 12px;
+  }
+
+  .premium-input {
+    background: #fdfaf5;
+    border: 1.5px solid #e2d5c3;
+    border-radius: 14px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .premium-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(200,76,46,0.08); }
+
+  .empty-state { display: none; padding: 60px 20px; text-align: center; }
+  .empty-state.visible { display: flex; }
+</style>
+{% endblock %}
+
+{% block header %}
+{{ super() }}
+
+<!-- PROGRESS STEPS -->
+<div class="max-w-3xl mx-auto px-6 pt-10 pb-6 fade-up">
+  <div class="flex items-center justify-center gap-0">
+    <div class="flex flex-col items-center">
+      <div class="prog-circle circle-active">1</div>
+      <span class="text-[10px] uppercase tracking-widest mt-2 font-black text-primary">Cart</span>
+    </div>
+    <div class="prog-line line-idle mx-2"></div>
+    <div class="flex flex-col items-center">
+      <div class="prog-circle circle-idle">2</div>
+      <span class="text-[10px] uppercase tracking-widest mt-2 font-bold text-gray-400">Checkout</span>
+    </div>
+    <div class="prog-line line-idle mx-2"></div>
+    <div class="flex flex-col items-center">
+      <div class="prog-circle circle-idle">3</div>
+      <span class="text-[10px] uppercase tracking-widest mt-2 font-bold text-gray-400">Order</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<main class="max-w-6xl mx-auto px-6 pb-24">
+  <div class="flex items-center gap-3 mb-8 fade-up">
+      <h1 class="font-display text-4xl font-black tracking-tight text-charcoal">Your Bag</h1>
+      <span id="itemCountBadge" class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-black">0 items</span>
+  </div>
+
+  <div class="flex flex-col lg:flex-row gap-10 items-start">
+
+    <!-- ─── CART ITEMS ─── -->
+    <div class="flex-1 w-full space-y-6">
+
+      <!-- Restaurant Context -->
+      <div id="cart-restaurant-header" class="hidden items-center justify-between p-4 bg-white rounded-2xl border border-[#f0e8d8] shadow-sm">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-[#fdf0e8] flex items-center justify-center text-xl">🥡</div>
+            <div>
+              <p id="cart-rest-name" class="font-black text-sm tracking-tight">Loading...</p>
+              <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Unified Delivery</p>
+            </div>
+        </div>
+        <button onclick="window.location.href='/customer/dashboard'" class="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Add More +</button>
+      </div>
+
+      <!-- Items Container -->
+      <div id="cartItems" class="space-y-4">
+          <!-- Skeletons while JS renders (even though local, it feels smooth) -->
+          <div class="h-24 skeleton w-full"></div>
+          <div class="h-24 skeleton w-full"></div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="empty-state flex-col items-center">
+        <div class="w-24 h-24 bg-[#fdf0e8] rounded-full flex items-center justify-center text-4xl mb-6">🏜️</div>
+        <h3 class="font-display text-2xl font-black mb-2">Your bag is empty</h3>
+        <p class="text-gray-500 text-sm mb-8 max-w-xs mx-auto">Looks like you haven't added any delicacies to your bag yet.</p>
+        <a href="/customer/dashboard" class="checkout-btn px-8 py-3.5 rounded-2xl text-sm font-bold inline-block">Start Exploring</a>
+      </div>
+
+      <!-- Promo Section -->
+      <div id="promoSection" class="bg-white rounded-2xl p-6 border border-[#f0e8d8] shadow-sm fade-up" style="animation-delay: 0.2s">
+        <p class="text-xs font-black uppercase tracking-widest text-charcoal mb-4">Promo Code</p>
+        <div class="flex gap-2">
+          <input id="promoInput" type="text" placeholder="Enter code (e.g. TASTE20)" class="premium-input flex-1"/>
+          <button type="button" onclick="applyPromo()" class="checkout-btn px-6 py-3 rounded-xl text-sm font-bold">Apply</button>
+        </div>
+        <p id="promoMsg" class="text-[10px] font-bold mt-2 hidden"></p>
+      </div>
+
+    </div>
+
+    <!-- ─── ORDER SUMMARY ─── -->
+    <div class="w-full lg:w-96 flex-shrink-0 lg:sticky lg:top-28">
+      <div class="summary-card p-8">
+        <h2 class="font-display text-xl font-black mb-6 tracking-tight">Order Summary</h2>
+
+        <div class="space-y-4">
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500 font-medium">Items Total</span>
+            <span class="font-bold text-charcoal" id="subtotalDisplay">₦0.00</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500 font-medium">Standard Delivery</span>
+            <span class="font-bold text-charcoal" id="deliveryDisplay">₦0.00</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500 font-medium">Processing Fee (7.5%)</span>
+            <span class="font-bold text-charcoal" id="taxDisplay">₦0.00</span>
+          </div>
+          <div id="discountRow" class="hidden flex justify-between text-sm">
+            <span class="font-bold" style="color:#5a8a0f">Special Discount</span>
+            <span class="font-black" style="color:#5a8a0f" id="discountDisplay">−₦0.00</span>
+          </div>
+        </div>
+
+        <div class="divider-dashed my-6"></div>
+
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-black text-gray-700">Estimated Total</span>
+          <span class="font-display text-3xl font-black text-primary" id="totalDisplay">₦0.00</span>
+        </div>
+        <p class="text-[10px] text-gray-400 font-medium text-right">* Includes all applicable taxes</p>
+
+        <button type="button" onclick="checkout()" class="checkout-btn mt-8 w-full py-4 rounded-2xl font-black text-base shadow-xl flex items-center justify-center gap-3">
+          PROCEED TO CHECKOUT
+          <i class="fa-solid fa-arrow-right text-xs"></i>
+        </button>
+
+        <div class="mt-6 p-4 bg-[#fdfaf5] rounded-xl flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-lg">🛡️</div>
+            <p class="text-[10px] font-bold text-gray-500 leading-tight">TasteFlow Secure Checkout: Your data is protected with 256-bit SSL encryption.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const DELIVERY = 500;
+  const TAX_RATE = 0.075;
+  let promoApplied = false;
+  let cart = JSON.parse(localStorage.getItem('tasteflow_cart')) || [];
+
+  document.addEventListener('DOMContentLoaded', renderCart);
+
+  function renderCart() {
+    const container = document.getElementById('cartItems');
+    container.innerHTML = '';
+
+    if (cart.length === 0) {
+      document.getElementById('emptyState').classList.add('visible');
+      document.getElementById('cart-restaurant-header').classList.add('hidden');
+      document.getElementById('promoSection').classList.add('hidden');
+      document.getElementById('itemCountBadge').textContent = '0 items';
+      recalcTotals();
+      return;
+    }
+
+    document.getElementById('emptyState').classList.remove('visible');
+    document.getElementById('promoSection').classList.remove('hidden');
+    
+    const header = document.getElementById('cart-restaurant-header');
+    header.classList.remove('hidden');
+    header.classList.add('flex');
+    document.getElementById('cart-rest-name').textContent = "Restoring Flavors..."; 
+
+    cart.forEach((item, index) => {
+      const row = `
+        <div class="item-row bg-white rounded-2xl p-4 border border-[#f0e8d8] flex gap-5 shadow-sm" id="cart-item-${index}" style="animation-delay: ${index * 0.1}s">
+          <img src="${item.image_url}" class="w-20 h-20 rounded-2xl object-cover flex-shrink-0 bg-gray-50 border border-gray-100"/>
+          
+          <div class="flex-1 flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start">
+                <p class="font-black text-charcoal text-base tracking-tight truncate max-w-[140px] md:max-w-none">${item.name}</p>
+                <p class="font-black text-primary text-base" id="subtotal-${index}">₦${(item.price * item.quantity).toLocaleString()}</p>
+              </div>
+              <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">₦${parseFloat(item.price).toLocaleString()} per unit</p>
+            </div>
+            
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4 bg-[#fdf0e8]/50 px-2 py-1.5 rounded-xl border border-primary/5">
+                <button type="button" class="qty-btn" onclick="changeQty(${index}, -1)">−</button>
+                <span class="font-black text-sm w-4 text-center text-primary" id="qty-${index}">${item.quantity}</span>
+                <button type="button" class="qty-btn" onclick="changeQty(${index}, 1)">+</button>
+              </div>
+              
+              <button type="button" onclick="removeItem(${index})" class="text-[10px] font-black text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition-all uppercase tracking-widest flex items-center gap-2">
+                <i class="fa-solid fa-trash-can"></i> Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', row);
+    });
+
+    recalcTotals();
+  }
+
+  function changeQty(index, delta) {
+    cart[index].quantity += delta;
+    if (cart[index].quantity < 1) {
+      removeItem(index);
+      return;
+    }
+    localStorage.setItem('tasteflow_cart', JSON.stringify(cart));
+    document.getElementById(`qty-${index}`).textContent = cart[index].quantity;
+    document.getElementById(`subtotal-${index}`).textContent = `₦${(cart[index].price * cart[index].quantity).toLocaleString()}`;
+    recalcTotals();
+  }
+
+  function removeItem(index) {
+    cart.splice(index, 1);
+    localStorage.setItem('tasteflow_cart', JSON.stringify(cart));
+    showToast('Removed from your bag');
+    renderCart();
+  }
+
+  function recalcTotals() {
+    let subtotal = 0;
+    let totalQty = 0;
+    cart.forEach(item => {
+      subtotal += (item.price * item.quantity);
+      totalQty += item.quantity;
+    });
+
+    const discount = promoApplied ? (subtotal * 0.2) : 0;
+    const tax = (subtotal - discount) * TAX_RATE;
+    const total = subtotal === 0 ? 0 : (subtotal - discount + DELIVERY + tax);
+
+    document.getElementById('itemCountBadge').textContent = `${totalQty} items`;
+    document.getElementById('subtotalDisplay').textContent = '₦' + subtotal.toLocaleString();
+    document.getElementById('deliveryDisplay').textContent = subtotal === 0 ? '₦0.00' : '₦' + DELIVERY.toLocaleString();
+    document.getElementById('taxDisplay').textContent = '₦' + tax.toLocaleString();
+    document.getElementById('totalDisplay').textContent = '₦' + total.toLocaleString();
+
+    if (promoApplied) {
+      document.getElementById('discountRow').classList.remove('hidden');
+      document.getElementById('discountDisplay').textContent = '−₦' + discount.toLocaleString();
+    }
+  }
+
+  function applyPromo() {
+    if (cart.length === 0) return showToast('Your bag is empty');
+    const code = document.getElementById('promoInput').value.trim().toUpperCase();
+    const msg = document.getElementById('promoMsg');
+    
+    if (code === 'TASTE20') {
+      promoApplied = true;
+      msg.textContent = 'TASTE20: 20% DISCOUNT APPLIED';
+      msg.className = 'text-[10px] font-black mt-2 text-green-600 uppercase tracking-widest';
+      msg.classList.remove('hidden');
+      recalcTotals();
+      showToast('20% discount applied!', 'success');
+    } else {
+      msg.textContent = 'INVALID CODE. TRY TASTE20';
+      msg.className = 'text-[10px] font-black mt-2 text-primary uppercase tracking-widest';
+      msg.classList.remove('hidden');
+    }
+  }
+
+  function checkout() {
+    if (cart.length === 0) return showToast('Your bag is empty');
+    const checkoutData = {
+        subtotal: parseFloat(document.getElementById('subtotalDisplay').textContent.replace('₦', '').replace(/,/g, '')),
+        delivery: DELIVERY,
+        tax: parseFloat(document.getElementById('taxDisplay').textContent.replace('₦', '').replace(/,/g, '')),
+        discount: promoApplied ? parseFloat(document.getElementById('discountDisplay').textContent.replace('−₦', '').replace(/,/g, '')) : 0,
+        total: parseFloat(document.getElementById('totalDisplay').textContent.replace('₦', '').replace(/,/g, ''))
+    };
+    localStorage.setItem('tasteflow_checkout', JSON.stringify(checkoutData));
+    window.location.href = '/customer/checkout';
+  }
+</script>
+{% endblock %}

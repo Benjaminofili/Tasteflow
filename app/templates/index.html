@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TasteFlow – Order Food Online</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand:   '#C84C2E',
+            herb:    '#87B42D',
+            cream:   '#FDF4E3',
+            charcoal:'#2C2C2C',
+            body:    '#4A4A4A',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: #FDF4E3; color: #2C2C2C; }
+
+    /* ── Fade-up animation ── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .fade-up-delay-1 { transition-delay: 0.1s; }
+    .fade-up-delay-2 { transition-delay: 0.2s; }
+    .fade-up-delay-3 { transition-delay: 0.3s; }
+
+    /* ── Restaurant card hover ── */
+    .restaurant-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .restaurant-card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 16px 40px rgba(200,76,46,.15);
+    }
+
+    /* ── Buttons ── */
+    .btn-brand {
+      background: #C84C2E;
+      color: #fff;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+    .btn-brand:hover { background: #a83920; transform: translateY(-1px); }
+
+    .btn-outline {
+      border: 2px solid #C84C2E;
+      color: #C84C2E;
+      background: transparent;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .btn-outline:hover { background: #C84C2E; color: #fff; }
+
+    /* ── Nav link underline ── */
+    .nav-link {
+      position: relative;
+      color: #4A4A4A;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      left: 0; bottom: -3px;
+      width: 0; height: 2px;
+      background: #C84C2E;
+      transition: width 0.25s ease;
+    }
+    .nav-link:hover { color: #C84C2E; }
+    .nav-link:hover::after { width: 100%; }
+
+    /* ── Mobile menu ── */
+    #mobile-menu {
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+    #mobile-menu.open { transform: translateX(0); }
+
+    /* ── Abstract food illustration ── */
+    .food-ring {
+      animation: spin-slow 18s linear infinite;
+    }
+    @keyframes spin-slow {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .food-blob {
+      animation: float 4s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-12px); }
+    }
+
+    /* ── Search bar focus ── */
+    #search-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(200,76,46,.25); }
+
+    /* ── Step card hover ── */
+    .step-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .step-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(135,180,45,.18);
+    }
+
+    /* ── Testimonial card ── */
+    .testimonial-card {
+      transition: box-shadow 0.2s ease;
+    }
+    .testimonial-card:hover {
+      box-shadow: 0 12px 36px rgba(200,76,46,.12);
+    }
+
+    /* ── Social icon ── */
+    .social-icon {
+      transition: color 0.2s ease, transform 0.2s ease;
+    }
+    .social-icon:hover { color: #C84C2E; transform: translateY(-2px); }
+
+    /* ── Noise texture overlay ── */
+    .noise::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      border-radius: inherit;
+    }
+  </style>
+</head>
+<body class="antialiased">
+
+<!-- ══════════════════════════════════════════
+     NAVIGATION
+══════════════════════════════════════════ -->
+<nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
+
+    <!-- Logo -->
+    <a href="/" id="main-logo" class="flex items-center gap-2 shrink-0">
+      <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-brand text-white text-sm font-bold">T</span>
+      <span class="text-xl font-bold text-brand tracking-tight">TasteFlow</span>
+    </a>
+
+    <!-- Center links (desktop) -->
+    <ul class="hidden md:flex items-center gap-8">
+      <li><a href="/" id="nav-home" class="nav-link">Home</a></li>
+      <li><a href="#restaurants" class="nav-link">Restaurants</a></li>
+      <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
+    </ul>
+
+    <!-- CTA + hamburger -->
+    <div class="flex items-center gap-4">
+      <a href="/login" id="desktop-auth-btn" class="hidden md:inline-flex btn-brand px-5 py-2 rounded-full text-sm font-semibold">Login / Register</a>
+      <button id="hamburger" class="md:hidden flex flex-col gap-1.5 p-1" aria-label="Open menu">
+        <span class="hamburger-line w-6 h-0.5 bg-charcoal rounded transition-all duration-300"></span>
+        <span class="hamburger-line w-6 h-0.5 bg-charcoal rounded transition-all duration-300"></span>
+        <span class="hamburger-line w-6 h-0.5 bg-charcoal rounded transition-all duration-300"></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile slide-in menu -->
+<div id="mobile-menu" class="fixed inset-y-0 right-0 z-[100] w-72 bg-white shadow-2xl flex flex-col p-8 md:hidden">
+  <button id="close-menu" class="self-end text-gray-400 hover:text-brand transition-colors mb-8">
+    <i class="fa-solid fa-xmark text-2xl"></i>
+  </button>
+  <ul class="flex flex-col gap-6 text-lg font-medium">
+    <li><a href="#" class="nav-link text-charcoal" onclick="closeMobileMenu()">Home</a></li>
+    <li><a href="#restaurants" class="nav-link text-charcoal" onclick="closeMobileMenu()">Restaurants</a></li>
+    <li><a href="#how-it-works" class="nav-link text-charcoal" onclick="closeMobileMenu()">How It Works</a></li>
+  </ul>
+  <a href="/login" id="mobile-auth-btn" class="btn-brand mt-10 px-5 py-3 rounded-full text-sm font-semibold text-center">Login / Register</a>
+</div>
+<div id="menu-overlay" class="fixed inset-0 bg-black/40 z-[99] hidden" onclick="closeMobileMenu()"></div>
+
+
+<!-- ══════════════════════════════════════════
+     HERO SECTION
+══════════════════════════════════════════ -->
+<section class="relative overflow-hidden pt-16 pb-0" style="background:#FDF4E3;">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center py-16 lg:py-24">
+
+    <!-- Left copy -->
+    <div class="fade-up">
+      <span class="inline-flex items-center gap-2 bg-brand/10 text-brand text-xs font-semibold px-3 py-1.5 rounded-full mb-5">
+        <i class="fa-solid fa-bolt text-xs"></i> Fast Delivery · 30 min or free
+      </span>
+      <h1 class="text-4xl sm:text-5xl lg:text-[52px] font-extrabold text-charcoal leading-tight tracking-tight mb-5">
+        Craving Something <span class="text-brand">Delicious?</span><br/>We've Got You Covered.
+      </h1>
+      <p class="text-body text-lg leading-relaxed mb-8 max-w-md">
+        Discover hundreds of local restaurants and get your favourite meals delivered fresh to your door in minutes.
+      </p>
+
+      <!-- Search bar -->
+      <div class="flex items-center bg-white rounded-full shadow-md border border-gray-100 p-1.5 max-w-lg">
+        <span class="pl-4 text-gray-400"><i class="fa-solid fa-location-dot"></i></span>
+        <input id="search-input" type="text" placeholder="Enter your delivery address…"
+          class="flex-1 px-4 py-2.5 bg-transparent text-sm text-charcoal placeholder-gray-400 rounded-full focus:outline-none"/>
+        <button id="search-btn" class="btn-brand px-6 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap">
+          Find Food
+        </button>
+      </div>
+
+      <!-- Trust badges -->
+      <div class="flex flex-wrap items-center gap-5 mt-8 text-sm text-body font-medium">
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-star text-yellow-400"></i> 4.9 avg rating</span>
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-store text-herb"></i> 500+ restaurants</span>
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-brand"></i> Safe & secure</span>
+      </div>
+    </div>
+
+    <!-- Right illustration -->
+    <div class="relative flex items-center justify-center h-80 lg:h-[440px] fade-up fade-up-delay-2">
+      <!-- Spinning dashed ring -->
+      <svg class="food-ring absolute w-[320px] h-[320px] lg:w-[400px] lg:h-[400px] opacity-20" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="200" cy="200" r="190" stroke="#C84C2E" stroke-width="3" stroke-dasharray="18 10"/>
+      </svg>
+      <!-- Outer soft circle -->
+      <div class="absolute w-64 h-64 lg:w-80 lg:h-80 rounded-full" style="background:radial-gradient(circle,#f8d8ce 0%,#FDF4E3 80%);"></div>
+      <!-- Floating plate SVG -->
+      <svg class="food-blob relative z-10 w-52 h-52 lg:w-64 lg:h-64" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Plate -->
+        <ellipse cx="120" cy="148" rx="88" ry="16" fill="#e2d0c8" opacity=".5"/>
+        <circle cx="120" cy="128" r="82" fill="#fff" stroke="#f0e4da" stroke-width="3"/>
+        <circle cx="120" cy="128" r="68" fill="#fdf4e3"/>
+        <!-- Bowl / food base -->
+        <ellipse cx="120" cy="140" rx="52" ry="18" fill="#C84C2E" opacity=".18"/>
+        <!-- Noodle / pasta swirl -->
+        <path d="M90 128 Q105 108 120 128 Q135 148 150 128" stroke="#C84C2E" stroke-width="5" stroke-linecap="round" fill="none"/>
+        <path d="M85 135 Q100 115 115 135 Q130 155 145 135" stroke="#C84C2E" stroke-width="4" stroke-linecap="round" fill="none" opacity=".6"/>
+        <!-- Herb green garnish dots -->
+        <circle cx="104" cy="118" r="5" fill="#87B42D"/>
+        <circle cx="136" cy="120" r="4" fill="#87B42D" opacity=".8"/>
+        <circle cx="118" cy="112" r="3.5" fill="#87B42D" opacity=".7"/>
+        <!-- Fork -->
+        <rect x="156" y="82" width="5" height="38" rx="2.5" fill="#4A4A4A" opacity=".5"/>
+        <rect x="153" y="82" width="2" height="16" rx="1" fill="#4A4A4A" opacity=".35"/>
+        <rect x="160" y="82" width="2" height="16" rx="1" fill="#4A4A4A" opacity=".35"/>
+        <!-- Steam wisps -->
+        <path d="M108 82 Q112 70 108 60" stroke="#C84C2E" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".35"/>
+        <path d="M120 78 Q124 66 120 56" stroke="#C84C2E" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".25"/>
+        <path d="M132 82 Q128 70 132 60" stroke="#C84C2E" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".3"/>
+      </svg>
+      <!-- Floating badge: "Free Delivery" -->
+      <div class="absolute top-8 right-4 lg:right-0 bg-white rounded-2xl shadow-lg px-4 py-3 flex items-center gap-2 food-blob" style="animation-delay:.8s">
+        <span class="w-8 h-8 bg-herb/15 rounded-full flex items-center justify-center text-herb text-sm"><i class="fa-solid fa-truck-fast"></i></span>
+        <div class="text-xs leading-tight">
+          <p class="font-semibold text-charcoal">Free Delivery</p>
+          <p class="text-body">on first order</p>
+        </div>
+      </div>
+      <!-- Floating badge: rating -->
+      <div class="absolute bottom-10 left-2 lg:-left-4 bg-white rounded-2xl shadow-lg px-4 py-3 flex items-center gap-2 food-blob" style="animation-delay:1.4s">
+        <span class="w-8 h-8 bg-yellow-50 rounded-full flex items-center justify-center text-yellow-400 text-sm"><i class="fa-solid fa-star"></i></span>
+        <div class="text-xs leading-tight">
+          <p class="font-semibold text-charcoal">Top Rated</p>
+          <p class="text-body">4.9 / 5 stars</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wave separator -->
+  <svg class="w-full" viewBox="0 0 1440 70" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,40 C360,80 1080,0 1440,40 L1440,70 L0,70 Z" fill="#ffffff"/>
+  </svg>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     FEATURED RESTAURANTS
+══════════════════════════════════════════ -->
+<section id="restaurants" class="bg-white py-20 lg:py-24">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10 fade-up">
+      <div>
+        <p class="text-brand text-sm font-semibold uppercase tracking-wider mb-2">Explore</p>
+        <h2 class="text-3xl lg:text-4xl font-extrabold text-charcoal">Popular Restaurants Near You</h2>
+      </div>
+      <a href="#" class="text-brand font-semibold text-sm flex items-center gap-1 hover:gap-2 transition-all">
+        View all <i class="fa-solid fa-arrow-right text-xs"></i>
+      </a>
+    </div>
+
+    <div id="restaurants-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <!-- Card 1 -->
+      <!-- <div class="restaurant-card bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm fade-up fade-up-delay-1"> -->
+        <!-- Placeholder image -->
+        <!-- <div class="relative h-44 overflow-hidden" style="background:linear-gradient(135deg,#f9e4dc 0%,#fdf4e3 100%);">
+          <svg class="absolute inset-0 w-full h-full" viewBox="0 0 320 176" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="176" fill="#f9e4dc"/> -->
+            <!-- Burger illustration -->
+            <!-- <ellipse cx="160" cy="120" rx="60" ry="10" fill="#e2c5b0" opacity=".5"/>
+            <ellipse cx="160" cy="112" rx="55" ry="14" fill="#C84C2E" opacity=".25"/>
+            <rect x="108" y="80" width="104" height="28" rx="8" fill="#C84C2E" opacity=".7"/>
+            <rect x="112" y="96" width="96" height="8" rx="4" fill="#87B42D" opacity=".7"/>
+            <rect x="106" y="104" width="108" height="24" rx="6" fill="#f5c47e" opacity=".8"/>
+            <ellipse cx="160" cy="78" rx="54" ry="20" fill="#C84C2E" opacity=".55"/>
+            <circle cx="144" cy="70" r="4" fill="#fff" opacity=".4"/>
+            <circle cx="162" cy="68" r="3" fill="#fff" opacity=".3"/>
+          </svg> -->
+          <!-- <span class="absolute top-3 left-3 bg-white/90 backdrop-blur text-xs font-semibold text-charcoal px-3 py-1 rounded-full shadow-sm">🔥 Trending</span>
+        </div>
+        <div class="p-6">
+          <div class="flex items-start justify-between mb-2">
+            <h3 class="text-lg font-bold text-charcoal">Burger Haven</h3>
+            <span class="flex items-center gap-1 text-sm font-semibold text-charcoal">
+              <i class="fa-solid fa-star text-yellow-400"></i> 4.8
+            </span>
+          </div>
+          <p class="text-sm text-body mb-3">American · Burgers · Fries</p>
+          <div class="flex items-center gap-4 text-xs text-body mb-5">
+            <span class="flex items-center gap-1"><i class="fa-regular fa-clock text-brand"></i> 20–30 min</span>
+            <span class="flex items-center gap-1"><i class="fa-solid fa-tag text-herb"></i> ££</span>
+            <span class="flex items-center gap-1 text-green-600 font-medium"><i class="fa-solid fa-truck-fast"></i> Free delivery</span>
+          </div>
+          <button class="btn-outline w-full py-2.5 rounded-full text-sm font-semibold">View Menu</button>
+        </div>
+      </div> -->
+
+      <!-- Card 2 -->
+      <!-- <div class="restaurant-card bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm fade-up fade-up-delay-2"> -->
+        <!-- <div class="relative h-44 overflow-hidden" style="background:linear-gradient(135deg,#e8f5d0 0%,#fdf4e3 100%);">
+          <svg class="absolute inset-0 w-full h-full" viewBox="0 0 320 176" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="176" fill="#e8f5d0"/> -->
+            <!-- Pizza illustration -->
+            <!-- <polygon points="160,40 230,140 90,140" fill="#f5c47e" opacity=".85"/>
+            <polygon points="160,40 230,140 90,140" fill="none" stroke="#C84C2E" stroke-width="2" opacity=".3"/>
+            <circle cx="148" cy="100" r="8" fill="#C84C2E" opacity=".7"/>
+            <circle cx="170" cy="110" r="7" fill="#C84C2E" opacity=".6"/>
+            <circle cx="155" cy="118" r="6" fill="#C84C2E" opacity=".5"/>
+            <circle cx="140" cy="114" r="5" fill="#87B42D" opacity=".7"/>
+            <circle cx="168" cy="95" r="4" fill="#87B42D" opacity=".6"/>
+            <ellipse cx="160" cy="142" rx="60" ry="9" fill="#d4b483" opacity=".3"/>
+          </svg>
+          <span class="absolute top-3 left-3 bg-white/90 backdrop-blur text-xs font-semibold text-herb px-3 py-1 rounded-full shadow-sm">🌿 Vegetarian</span>
+        </div>
+        <div class="p-6">
+          <div class="flex items-start justify-between mb-2">
+            <h3 class="text-lg font-bold text-charcoal">Pizza Piazza</h3>
+            <span class="flex items-center gap-1 text-sm font-semibold text-charcoal">
+              <i class="fa-solid fa-star text-yellow-400"></i> 4.7
+            </span>
+          </div>
+          <p class="text-sm text-body mb-3">Italian · Pizza · Pasta</p>
+          <div class="flex items-center gap-4 text-xs text-body mb-5">
+            <span class="flex items-center gap-1"><i class="fa-regular fa-clock text-brand"></i> 25–35 min</span>
+            <span class="flex items-center gap-1"><i class="fa-solid fa-tag text-herb"></i> £££</span>
+            <span class="flex items-center gap-1 text-gray-400"><i class="fa-solid fa-truck-fast"></i> £1.99 delivery</span>
+          </div>
+          <button class="btn-outline w-full py-2.5 rounded-full text-sm font-semibold">View Menu</button>
+        </div>
+      </div> -->
+
+      <!-- Card 3 -->
+      <!-- <div class="restaurant-card bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm fade-up fade-up-delay-3">
+        <div class="relative h-44 overflow-hidden" style="background:linear-gradient(135deg,#fde8d0 0%,#fdf4e3 100%);">
+          <svg class="absolute inset-0 w-full h-full" viewBox="0 0 320 176" xmlns="http://www.w3.org/2000/svg">
+            <rect width="320" height="176" fill="#fde8d0"/> -->
+            <!-- Sushi illustration -->
+            <!-- <rect x="96" y="90" width="128" height="52" rx="12" fill="#f5e6d3" stroke="#C84C2E" stroke-width="1.5" opacity=".6"/>
+            <ellipse cx="124" cy="116" rx="18" ry="18" fill="#fff" stroke="#e5cfc0" stroke-width="1.5"/>
+            <ellipse cx="160" cy="116" rx="18" ry="18" fill="#fff" stroke="#e5cfc0" stroke-width="1.5"/>
+            <ellipse cx="196" cy="116" rx="18" ry="18" fill="#fff" stroke="#e5cfc0" stroke-width="1.5"/>
+            <circle cx="124" cy="116" r="10" fill="#C84C2E" opacity=".65"/>
+            <circle cx="160" cy="116" r="10" fill="#87B42D" opacity=".65"/>
+            <circle cx="196" cy="116" r="10" fill="#f5c47e" opacity=".8"/>
+            <!-- Chopsticks -->
+            <!-- <line x1="140" y1="55" x2="170" y2="88" stroke="#8B6340" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+            <line x1="152" y1="50" x2="178" y2="85" stroke="#8B6340" stroke-width="3" stroke-linecap="round" opacity=".4"/>
+          </svg>
+          <span class="absolute top-3 left-3 bg-brand text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">⭐ Top Pick</span>
+        </div>
+        <div class="p-6">
+          <div class="flex items-start justify-between mb-2">
+            <h3 class="text-lg font-bold text-charcoal">Sakura Sushi</h3>
+            <span class="flex items-center gap-1 text-sm font-semibold text-charcoal">
+              <i class="fa-solid fa-star text-yellow-400"></i> 4.9
+            </span>
+          </div>
+          <p class="text-sm text-body mb-3">Japanese · Sushi · Asian Fusion</p>
+          <div class="flex items-center gap-4 text-xs text-body mb-5">
+            <span class="flex items-center gap-1"><i class="fa-regular fa-clock text-brand"></i> 30–40 min</span>
+            <span class="flex items-center gap-1"><i class="fa-solid fa-tag text-herb"></i> £££</span>
+            <span class="flex items-center gap-1 text-green-600 font-medium"><i class="fa-solid fa-truck-fast"></i> Free delivery</span>
+          </div>
+          <button class="btn-outline w-full py-2.5 rounded-full text-sm font-semibold">View Menu</button>
+        </div>
+      </div>  -->
+
+    </div>
+    <!-- /grid -->
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     HOW IT WORKS
+══════════════════════════════════════════ -->
+<section id="how-it-works" class="py-20 lg:py-24" style="background:#FDF4E3;">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="text-center mb-14 fade-up">
+      <p class="text-brand text-sm font-semibold uppercase tracking-wider mb-2">Simple &amp; Fast</p>
+      <h2 class="text-3xl lg:text-4xl font-extrabold text-charcoal">How TasteFlow Works</h2>
+      <p class="text-body mt-3 max-w-md mx-auto">Get your favourite food on the table in three easy steps. No fuss, no hassle.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Step 1 -->
+      <div class="step-card bg-white rounded-2xl p-8 border border-gray-100 shadow-sm text-center relative fade-up fade-up-delay-1">
+        <span class="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-brand text-white text-xs font-bold rounded-full flex items-center justify-center shadow">1</span>
+        <div class="w-16 h-16 bg-herb/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+          <i class="fa-solid fa-magnifying-glass text-2xl text-herb"></i>
+        </div>
+        <h3 class="text-xl font-bold text-charcoal mb-3">Search</h3>
+        <p class="text-body text-sm leading-relaxed">Enter your address and browse hundreds of nearby restaurants filtered by cuisine, rating, and delivery time.</p>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step-card bg-white rounded-2xl p-8 border border-gray-100 shadow-sm text-center relative fade-up fade-up-delay-2">
+        <span class="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-brand text-white text-xs font-bold rounded-full flex items-center justify-center shadow">2</span>
+        <div class="w-16 h-16 bg-herb/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+          <i class="fa-solid fa-utensils text-2xl text-herb"></i>
+        </div>
+        <h3 class="text-xl font-bold text-charcoal mb-3">Choose</h3>
+        <p class="text-body text-sm leading-relaxed">Pick your favourite dishes, customise your order, add it to your cart, and checkout securely in seconds.</p>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step-card bg-white rounded-2xl p-8 border border-gray-100 shadow-sm text-center relative fade-up fade-up-delay-3">
+        <span class="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-brand text-white text-xs font-bold rounded-full flex items-center justify-center shadow">3</span>
+        <div class="w-16 h-16 bg-herb/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+          <i class="fa-solid fa-face-grin-stars text-2xl text-herb"></i>
+        </div>
+        <h3 class="text-xl font-bold text-charcoal mb-3">Enjoy</h3>
+        <p class="text-body text-sm leading-relaxed">Sit back and relax. Your food is on its way. Track your delivery in real time and savour every bite.</p>
+      </div>
+
+    </div>
+
+    <!-- CTA Banner -->
+    <div class="mt-14 rounded-2xl overflow-hidden relative fade-up" style="background:linear-gradient(135deg,#C84C2E 0%,#a83920 100%);">
+      <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 px-8 py-10">
+        <div>
+          <h3 class="text-2xl font-bold text-white mb-1">Ready to order your first meal?</h3>
+          <p class="text-white/80 text-sm">Get 20% off your first order with code <span class="font-bold text-white">TASTEFLOW20</span></p>
+        </div>
+        <a href="#" class="shrink-0 bg-white text-brand font-bold px-8 py-3 rounded-full hover:bg-cream transition-colors text-sm shadow-lg">
+          Order Now <i class="fa-solid fa-arrow-right ml-1.5 text-xs"></i>
+        </a>
+      </div>
+      <!-- Decorative circles -->
+      <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/10"></div>
+      <div class="absolute -left-6 -bottom-8 w-28 h-28 rounded-full bg-white/5"></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     TESTIMONIALS
+══════════════════════════════════════════ -->
+<section class="bg-white py-20 lg:py-24">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="text-center mb-12 fade-up">
+      <p class="text-brand text-sm font-semibold uppercase tracking-wider mb-2">Reviews</p>
+      <h2 class="text-3xl lg:text-4xl font-extrabold text-charcoal">What Our Customers Say</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Testimonial 1 -->
+      <div class="testimonial-card bg-cream rounded-2xl p-8 border border-gray-100 shadow-sm fade-up fade-up-delay-1">
+        <div class="flex items-center gap-1 mb-4">
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i>
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i>
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i>
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i>
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i>
+        </div>
+        <p class="text-body text-base leading-relaxed mb-6 italic">
+          "TasteFlow completely changed how I eat. The selection is incredible, delivery is always on time, and the app is beautifully easy to use. My go-to for every meal!"
+        </p>
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0" style="background:linear-gradient(135deg,#C84C2E,#e07a60);">A</div>
+          <div>
+            <p class="font-semibold text-charcoal">Amara Okafor</p>
+            <p class="text-xs text-body">Verified Customer · Lagos</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonial 2 -->
+      <div class="testimonial-card bg-cream rounded-2xl p-8 border border-gray-100 shadow-sm fade-up fade-up-delay-2">
+        <div class="flex items-center gap-1 mb-4">
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i>
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i>
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i>
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i>
+          <i class="fa-solid fa-star text-yellow-400 text-sm"></i>
+        </div>
+        <p class="text-body text-base leading-relaxed mb-6 italic">
+          "I ordered sushi at midnight and it arrived in under 30 minutes — still fresh and perfectly packed. The real-time tracking feature gives so much peace of mind. Love it!"
+        </p>
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0" style="background:linear-gradient(135deg,#87B42D,#a0cc45);">D</div>
+          <div>
+            <p class="font-semibold text-charcoal">David Mensah</p>
+            <p class="text-xs text-body">Verified Customer · Abuja</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-12 fade-up">
+      <div class="text-center p-6 rounded-2xl bg-brand/5 border border-brand/10">
+        <p class="text-3xl font-extrabold text-brand">500+</p>
+        <p class="text-sm text-body mt-1 font-medium">Restaurants</p>
+      </div>
+      <div class="text-center p-6 rounded-2xl bg-herb/5 border border-herb/10">
+        <p class="text-3xl font-extrabold text-herb">50K+</p>
+        <p class="text-sm text-body mt-1 font-medium">Happy Customers</p>
+      </div>
+      <div class="text-center p-6 rounded-2xl bg-yellow-50 border border-yellow-100">
+        <p class="text-3xl font-extrabold text-yellow-500">4.9★</p>
+        <p class="text-sm text-body mt-1 font-medium">Average Rating</p>
+      </div>
+      <div class="text-center p-6 rounded-2xl bg-brand/5 border border-brand/10">
+        <p class="text-3xl font-extrabold text-brand">30m</p>
+        <p class="text-sm text-body mt-1 font-medium">Avg. Delivery</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════ -->
+<footer class="py-12 lg:py-16" style="background:#FDF4E3; border-top: 1px solid #f0e4da;">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+
+      <!-- Brand -->
+      <div class="lg:col-span-2">
+        <a href="#" class="flex items-center gap-2 mb-4">
+          <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-brand text-white text-sm font-bold">T</span>
+          <span class="text-xl font-bold text-brand tracking-tight">TasteFlow</span>
+        </a>
+        <p class="text-body text-sm leading-relaxed max-w-xs">
+          Bringing your favourite restaurant meals straight to your door — fast, fresh, and fuss-free.
+        </p>
+        <div class="flex items-center gap-4 mt-5">
+          <a href="#" class="social-icon text-gray-400 text-xl"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#" class="social-icon text-gray-400 text-xl"><i class="fa-brands fa-x-twitter"></i></a>
+          <a href="#" class="social-icon text-gray-400 text-xl"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="#" class="social-icon text-gray-400 text-xl"><i class="fa-brands fa-tiktok"></i></a>
+        </div>
+      </div>
+
+      <!-- Quick links -->
+      <div>
+        <h4 class="text-charcoal font-semibold mb-4">Company</h4>
+        <ul class="space-y-2.5 text-sm text-body">
+          <li><a href="#" class="hover:text-brand transition-colors">About Us</a></li>
+          <li><a href="#" class="hover:text-brand transition-colors">Careers</a></li>
+          <li><a href="#" class="hover:text-brand transition-colors">Blog</a></li>
+          <li><a href="#" class="hover:text-brand transition-colors">Contact</a></li>
+        </ul>
+      </div>
+
+      <!-- Legal -->
+      <div>
+        <h4 class="text-charcoal font-semibold mb-4">Legal</h4>
+        <ul class="space-y-2.5 text-sm text-body">
+          <li><a href="#" class="hover:text-brand transition-colors">Terms of Service</a></li>
+          <li><a href="#" class="hover:text-brand transition-colors">Privacy Policy</a></li>
+          <li><a href="#" class="hover:text-brand transition-colors">Cookie Policy</a></li>
+          <li><a href="#" class="hover:text-brand transition-colors">Accessibility</a></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="border-t border-gray-200 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-body">
+      <p>© 2026 TasteFlow. All rights reserved.</p>
+      <p>Made with <span class="text-brand">♥</span> for food lovers everywhere.</p>
+    </div>
+  </div>
+</footer>
+
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════ -->
+<script>
+  // ── Mobile menu ──────────────────────────
+  const hamburger   = document.getElementById('hamburger');
+  const mobileMenu  = document.getElementById('mobile-menu');
+  const menuOverlay = document.getElementById('menu-overlay');
+  const closeBtn    = document.getElementById('close-menu');
+
+  function openMobileMenu() {
+    mobileMenu.classList.add('open');
+    menuOverlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeMobileMenu() {
+    mobileMenu.classList.remove('open');
+    menuOverlay.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+  hamburger.addEventListener('click', openMobileMenu);
+  closeBtn.addEventListener('click', closeMobileMenu);
+
+  // ── Scroll fade-up ────────────────────────
+  const fadeEls = document.querySelectorAll('.fade-up');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  fadeEls.forEach(el => observer.observe(el));
+
+  // ── Sticky nav shadow ────────────────────
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    nav.style.boxShadow = window.scrollY > 10
+      ? '0 2px 20px rgba(0,0,0,.08)'
+      : '0 1px 0 #f0e4da';
+  });
+
+  // ── Fetch and Build Featured Restaurants ────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  fetchFeaturedRestaurants();
+  checkAuthStatus();
+  // ── Set up Search Listeners ──────────────────────────────
+  const searchBtn = document.getElementById('search-btn');
+  const searchInput = document.getElementById('search-input');
+
+  if (searchBtn && searchInput) {
+    // Search when clicking the button
+    searchBtn.addEventListener('click', () => {
+      performSearch(searchInput.value);
+    });
+
+    // Search when pressing "Enter" on the keyboard
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        performSearch(searchInput.value);
+      }
+    });
+  }
+});
+
+async function fetchFeaturedRestaurants() {
+  const container = document.getElementById('restaurants-container');
+  
+  // Show a temporary loading message while fetching
+  container.innerHTML = '<p class="text-center col-span-full text-body py-10"><i class="fa-solid fa-spinner fa-spin text-brand mr-2"></i> Loading popular restaurants...</p>';
+
+  try {
+    // Call your Flask backend API
+    const response = await fetch('/customer/api/restaurants/search');
+    const data = await response.json();
+    
+    // Clear the loading message
+    container.innerHTML = '';
+
+    // If no restaurants exist in the database yet
+    if (!data.restaurants || data.restaurants.length === 0) {
+      container.innerHTML = '<p class="text-center col-span-full text-body py-10">No restaurants available right now. Check back soon!</p>';
+      return;
+    }
+
+    // Since this is a featured section, let's only take the first 3 restaurants
+    const featuredRestaurants = data.restaurants.slice(0, 3);
+
+    featuredRestaurants.forEach((restaurant, index) => {
+      // 1. Handle missing images (fallback to a placeholder)
+      const imgUrl = restaurant.logo_url || 'https://via.placeholder.com/400x250/f9e4dc/C84C2E?text=Restaurant';
+      
+      // 2. Handle ratings (if a restaurant has no reviews yet)
+      const ratingHtml = restaurant.avg_rating 
+        ? `<i class="fa-solid fa-star text-yellow-400"></i> ${restaurant.avg_rating}`
+        : `<i class="fa-solid fa-star text-gray-300"></i> New`;
+
+      // 3. Stagger the fade-up animation delay for a cascading effect
+      const delayClass = `fade-up-delay-${index + 1}`;
+
+      // 4. Build the HTML string using your original Tailwind classes
+      const cardHtml = `
+        <div class="restaurant-card bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm fade-up visible ${delayClass}">
+          <div class="relative h-44 overflow-hidden bg-gray-100">
+            <img src="${imgUrl}" alt="${restaurant.name}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+          </div>
+          <div class="p-6">
+            <div class="flex items-start justify-between mb-2">
+              <h3 class="text-lg font-bold text-charcoal truncate pr-2">${restaurant.name}</h3>
+              <span class="flex items-center gap-1 text-sm font-semibold text-charcoal shrink-0">
+                ${ratingHtml}
+              </span>
+            </div>
+            <p class="text-sm text-body mb-3 truncate" title="${restaurant.address}">${restaurant.address}</p>
+            <div class="flex items-center gap-4 text-xs text-body mb-5">
+              <span class="flex items-center gap-1"><i class="fa-solid fa-utensils text-brand"></i> ${restaurant.dish_count} dishes</span>
+              <span class="flex items-center gap-1"><i class="fa-regular fa-comment text-herb"></i> ${restaurant.review_count} reviews</span>
+            </div>
+            <a href="/restaurant/${restaurant.id}" class="block text-center btn-outline w-full py-2.5 rounded-full text-sm font-semibold">
+              View Menu
+            </a>
+          </div>
+        </div>
+      `;
+      
+      // 5. Inject the newly built card into the container
+      container.insertAdjacentHTML('beforeend', cardHtml);
+    });
+
+  } catch (error) {
+    console.error("Error fetching restaurants:", error);
+    container.innerHTML = '<p class="text-center col-span-full text-red-500 py-10">Failed to load restaurants. Please ensure the backend server is running.</p>';
+  }
+}
+
+// ── Check User Authentication Status ────────────────────────
+async function checkAuthStatus() {
+  try {
+    // Call the /auth/api/auth/me endpoint
+    const response = await fetch('/auth/api/auth/me');
+    const data = await response.json();
+
+    const desktopBtn = document.getElementById('desktop-auth-btn');
+    const mobileBtn = document.getElementById('mobile-auth-btn');
+
+    // If the backend confirms the user is logged in
+    if (data.authenticated && data.user) {
+      // Determine where the button should take them based on their role
+      const dashboardUrl = data.user.role === 'owner' ? '/owner/dashboard' : '/dashboard';
+      
+      // Update Logo and Home links if logged in
+      const mainLogo = document.getElementById('main-logo');
+      const navHome = document.getElementById('nav-home');
+      if (mainLogo) mainLogo.href = dashboardUrl;
+      if (navHome) navHome.href = dashboardUrl;
+
+      // Get their first name to make it personal
+      const firstName = data.user.name.split(' ')[0];
+      const btnText = `Hi, ${firstName}`;
+
+      // Update Desktop Button
+      if (desktopBtn) {
+        desktopBtn.innerHTML = `${btnText} <i class="fa-regular fa-user ml-1"></i>`;
+        desktopBtn.href = dashboardUrl;
+      }
+      
+      // Update Mobile Button
+      if (mobileBtn) {
+        mobileBtn.innerHTML = `${btnText} <i class="fa-regular fa-user ml-1"></i>`;
+        mobileBtn.href = dashboardUrl;
+      }
+    }
+  } catch (error) {
+    console.error("Error checking auth status:", error);
+  }
+}
+
+// ── Search API Call & Render ──────────────────────────────
+async function performSearch(query) {
+  const container = document.getElementById('restaurants-container');
+  const section = document.getElementById('restaurants');
+  
+  // Clean up the query string
+  const searchTerm = query.trim();
+
+  // Scroll the user down to the restaurant section so they can see the results loading
+  section.scrollIntoView({ behavior: 'smooth' });
+  container.innerHTML = '<p class="text-center col-span-full text-body py-10"><i class="fa-solid fa-spinner fa-spin text-brand mr-2"></i> Searching...</p>';
+
+  try {
+    // Append the query parameter ?q= to your existing API endpoint
+    const url = searchTerm 
+      ? `/customer/api/restaurants/search?q=${encodeURIComponent(searchTerm)}` 
+      : '/customer/api/restaurants/search';
+      
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    container.innerHTML = '';
+
+    // Handle no results
+    if (!data.restaurants || data.restaurants.length === 0) {
+      container.innerHTML = `<p class="text-center col-span-full text-body py-10">No restaurants found for "<b>${searchTerm}</b>". Try another location or restaurant name.</p>`;
+      return;
+    }
+
+    // Loop through the search results and build the cards (reusing our card logic)
+    data.restaurants.forEach((restaurant, index) => {
+      const imgUrl = restaurant.logo_url || 'https://via.placeholder.com/400x250/f9e4dc/C84C2E?text=Restaurant';
+      
+      const ratingHtml = restaurant.avg_rating 
+        ? `<i class="fa-solid fa-star text-yellow-400"></i> ${restaurant.avg_rating}`
+        : `<i class="fa-solid fa-star text-gray-300"></i> New`;
+
+      // Cap the animation delay so it doesn't wait too long if there are many results
+      const delayClass = `fade-up-delay-${Math.min(index + 1, 3)}`;
+
+      const cardHtml = `
+        <div class="restaurant-card bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm fade-up visible ${delayClass}">
+          <div class="relative h-44 overflow-hidden bg-gray-100">
+            <img src="${imgUrl}" alt="${restaurant.name}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+          </div>
+          <div class="p-6">
+            <div class="flex items-start justify-between mb-2">
+              <h3 class="text-lg font-bold text-charcoal truncate pr-2">${restaurant.name}</h3>
+              <span class="flex items-center gap-1 text-sm font-semibold text-charcoal shrink-0">
+                ${ratingHtml}
+              </span>
+            </div>
+            <p class="text-sm text-body mb-3 truncate" title="${restaurant.address}">${restaurant.address}</p>
+            <div class="flex items-center gap-4 text-xs text-body mb-5">
+              <span class="flex items-center gap-1"><i class="fa-solid fa-utensils text-brand"></i> ${restaurant.dish_count} dishes</span>
+              <span class="flex items-center gap-1"><i class="fa-regular fa-comment text-herb"></i> ${restaurant.review_count} reviews</span>
+            </div>
+            <a href="/restaurant/${restaurant.id}" class="block text-center btn-outline w-full py-2.5 rounded-full text-sm font-semibold">
+              View Menu
+            </a>
+          </div>
+        </div>
+      `;
+      container.insertAdjacentHTML('beforeend', cardHtml);
+    });
+
+    // Optionally update the section title to show what they searched for
+    const title = document.querySelector('#restaurants h2');
+    if (title) {
+        title.innerHTML = searchTerm ? `Search Results for "<span class="text-brand">${searchTerm}</span>"` : "Popular Restaurants Near You";
+    }
+
+  } catch (error) {
+    console.error("Error performing search:", error);
+    container.innerHTML = '<p class="text-center col-span-full text-red-500 py-10">Something went wrong with the search. Please try again.</p>';
+  }
+}
+
+</script>
+</body>
+</html>

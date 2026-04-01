@@ -1,0 +1,237 @@
+{% extends 'admin/base.html' %}
+{% set active_page = 'profile' %}
+
+{% block title %}TasteFlow – Admin Profile{% endblock %}
+{% block header_title %}Admin Profile{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl">
+    
+    <!-- Profile Card (Avatar) -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 lg:col-span-1 h-fit">
+        <div class="text-center">
+            <div class="relative inline-block mb-4">
+                <input type="file" id="profile_image_input" accept="image/*" class="hidden" onchange="previewImage(this)">
+                <div id="avatar-container" onclick="document.getElementById('profile_image_input').click()" class="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center border-4 border-white dark:border-gray-800 shadow-md overflow-hidden cursor-pointer group transition-all hover:ring-4 hover:ring-primary/20">
+                    <img id="profile-avatar" src="" alt="" class="hidden w-full h-full object-cover">
+                    <span id="avatar-initials" class="text-2xl font-bold text-primary">AD</span>
+                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+                </div>
+            </div>
+            <h2 id="display-name" class="text-xl font-bold text-charcoal dark:text-white">Admin User</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Super Administrator</p>
+            <span class="inline-flex mt-3 items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Active Account
+            </span>
+        </div>
+    </div>
+
+    <!-- Forms Column -->
+    <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Personal Info -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+            <h3 class="text-lg font-semibold text-charcoal dark:text-white mb-4">Personal Information</h3>
+            <form id="profile-form" onsubmit="handleProfileUpdate(event)" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-1">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+                        <input type="text" id="profile_name" name="name" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div class="md:col-span-1">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
+                        <input type="email" id="profile_email" readonly disabled class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-500 cursor-not-allowed">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone Number</label>
+                        <input type="tel" id="profile_phone" name="phone" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Address</label>
+                        <textarea id="profile_address" name="address" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end pt-2">
+                    <button type="submit" class="px-6 py-2.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Security -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+            <h3 class="text-lg font-semibold text-charcoal dark:text-white mb-4">Security Settings</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <!-- Password -->
+                <div>
+                    <h4 class="font-medium text-gray-900 dark:text-white mb-4">Change Password</h4>
+                    <form id="password-form" onsubmit="handlePasswordUpdate(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Password</label>
+                            <input type="password" id="current_password" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password</label>
+                            <input type="password" id="new_password" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm New Password</label>
+                            <input type="password" id="confirm_password" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <button type="submit" class="w-full px-4 py-2 bg-charcoal dark:bg-gray-700 text-white rounded-lg hover:bg-gray-900 transition-colors font-medium">
+                            Update Password
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Others -->
+                <div class="space-y-6 text-sm">
+                    <div>
+                        <h4 class="font-medium text-gray-900 dark:text-white mb-4">Recovery Options</h4>
+                        <div class="space-y-3">
+                            <p class="text-gray-500">Recovery Email: <span class="text-gray-900 dark:text-gray-200 font-medium">admin-recovery@tasteflow.com</span></p>
+                            <button onclick="showToast('Feature coming soon in production.', 'info')" class="text-primary hover:underline font-medium">Change recovery email</button>
+                        </div>
+                    </div>
+                    <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium text-gray-900 dark:text-white">2FA Security</h4>
+                                <p class="text-xs text-gray-500">Highly recommended for administrators.</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" onchange="showToast('2FA requires Authy/Google Authenticator setup. Coming soon.', 'info')">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', fetchAdminProfile);
+
+    async function fetchAdminProfile() {
+        try {
+            const res = await fetch('/admin/api/profile');
+            const data = await res.json();
+            if (res.ok) {
+                document.getElementById('profile_name').value = data.name || '';
+                document.getElementById('profile_email').value = data.email || '';
+                document.getElementById('profile_phone').value = data.phone || '';
+                document.getElementById('profile_address').value = data.address || '';
+                document.getElementById('display-name').textContent = data.name || 'System Admin';
+
+                if (data.profile_image) {
+                    const img = document.getElementById('profile-avatar');
+                    img.src = data.profile_image;
+                    img.classList.remove('hidden');
+                    document.getElementById('avatar-initials').classList.add('hidden');
+                }
+            }
+        } catch (err) {
+            showToast("Failed to load profile data.", "error");
+        }
+    }
+
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('profile-avatar');
+                img.src = e.target.result;
+                img.classList.remove('hidden');
+                document.getElementById('avatar-initials').classList.add('hidden');
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    async function handleProfileUpdate(e) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="flex items-center gap-2">Saving...</span>'; 
+        btn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('action', 'update_info');
+        formData.append('name', document.getElementById('profile_name').value.trim());
+        formData.append('phone', document.getElementById('profile_phone').value.trim());
+        formData.append('address', document.getElementById('profile_address').value.trim());
+        
+        const imageFile = document.getElementById('profile_image_input').files[0];
+        if (imageFile) {
+            formData.append('profile_image', imageFile);
+        }
+
+        try {
+            const res = await fetch('/admin/api/profile', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast('✅ Profile updated successfully!', 'success');
+                document.getElementById('display-name').textContent = document.getElementById('profile_name').value;
+            } else {
+                showToast(data.message || 'Error updating profile.', 'error');
+            }
+        } catch (err) {
+            showToast('Network error. Please check your connection.', 'error');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    async function handlePasswordUpdate(e) {
+        e.preventDefault();
+        const currentPw = document.getElementById('current_password').value;
+        const newPw = document.getElementById('new_password').value;
+        const confirmPw = document.getElementById('confirm_password').value;
+
+        if (newPw !== confirmPw) {
+            showToast('New passwords do not match!', 'error');
+            return;
+        }
+
+        const btn = e.target.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Updating...'; btn.disabled = true;
+
+        try {
+            const res = await fetch('/admin/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'update_password', 
+                    current_password: currentPw, 
+                    new_password: newPw 
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast('🔒 Password securely updated!', 'success');
+                e.target.reset();
+            } else {
+                showToast(data.message || 'Failed to update password.', 'error');
+            }
+        } catch { 
+            showToast('Network error while updating password.', 'error'); 
+        } finally { 
+            btn.innerHTML = originalText; 
+            btn.disabled = false; 
+        }
+    }
+</script>
+{% endblock %}

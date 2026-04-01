@@ -1,0 +1,193 @@
+{% extends 'admin/base.html' %}
+{% set active_page = 'food_types' %}
+
+{% block title %}TasteFlow – Manage Food Types{% endblock %}
+{% block header_title %}Manage Food Types{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 lg:col-span-1 h-fit">
+        <h2 class="text-lg font-semibold text-charcoal dark:text-white mb-4">Add New Food-Type</h2>
+        <div class="space-y-4">
+            <div>
+                <label for="new-food-type-name" class="sr-only">Food-Type Name</label>
+                <input type="text" id="new-food-type-name"
+                    class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-charcoal dark:text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="e.g., Vegan, Gluten-Free, Halal"
+                    onkeydown="if(event.key==='Enter') addFoodType()">
+            </div>
+            <button type="button" onclick="addFoodType()"
+                class="w-full px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-opacity-90 transition-colors flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Add Food-Type
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden lg:col-span-2">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="text-lg font-semibold text-charcoal dark:text-white">Pending & Approved Tags</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Usage</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="food-types-tbody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">Loading food types...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', fetchFoodTypes);
+
+    document.getElementById('food-types-tbody').addEventListener('click', (e) => {
+        const approveBtn = e.target.closest('[data-approve-id]');
+        const rejectBtn = e.target.closest('[data-reject-id]');
+        const deleteBtn = e.target.closest('[data-delete-id]');
+
+        if (approveBtn) approveFoodType(Number(approveBtn.dataset.approveId));
+        if (rejectBtn) rejectFoodType(Number(rejectBtn.dataset.rejectId), rejectBtn.dataset.rejectName);
+        if (deleteBtn) deleteFoodType(Number(deleteBtn.dataset.deleteId), deleteBtn.dataset.deleteName, Number(deleteBtn.dataset.dishCount));
+    });
+
+    async function fetchFoodTypes() {
+        const tbody = document.getElementById('food-types-tbody');
+        try {
+            const res = await fetch('/admin/api/food-types');
+            const data = await res.json();
+            
+            if (res.ok) {
+                if (data.food_types.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">No food types yet. Add your first one!</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.food_types.map(ft => {
+                    const statusBadge = ft.is_approved 
+                        ? `<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Approved</span>` 
+                        : `<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending Review</span>`;
+
+                    let actionButtons = '';
+                    if (!ft.is_approved) {
+                        actionButtons = `
+                            <button data-approve-id="${ft.id}" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 mr-3" title="Approve">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            </button>
+                            <button data-reject-id="${ft.id}" data-reject-name="${ft.name}" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Reject">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        `;
+                    } else {
+                        actionButtons = `
+                            <button data-delete-id="${ft.id}" data-delete-name="${ft.name}" data-dish-count="${ft.dish_count}" class="text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors" title="Delete">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        `;
+                    }
+
+                    return `
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${ft.id}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${ft.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">${ft.dish_count} Dishes</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">${statusBadge}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${actionButtons}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        } catch (err) {
+            showToast('Failed to load food types.', 'error');
+        }
+    }
+
+    async function addFoodType() {
+        const input = document.getElementById('new-food-type-name');
+        const name = input.value.trim();
+        if (!name) { input.focus(); return; }
+        
+        try {
+            const res = await fetch('/admin/api/food-types', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            const data = await res.json();
+            if (res.ok) { 
+                input.value = ''; 
+                fetchFoodTypes(); 
+                showToast(`Food-type "${name}" added successfully!`, 'success');
+            } else { 
+                showToast(data.message || 'Error adding food type', 'error'); 
+            }
+        } catch { showToast('Network error. Please try again.', 'error'); }
+    }
+
+    async function approveFoodType(id) {
+        try {
+            const res = await fetch(`/admin/api/food-types/approve/${id}`, { method: 'POST' });
+            if (res.ok) {
+                fetchFoodTypes();
+                showToast('Food-type approved!', 'success');
+            }
+        } catch { showToast('Network error while approving.', 'error'); }
+    }
+
+    async function rejectFoodType(id, name) {
+        showConfirm(
+            'Reject Food-Type',
+            `Are you sure you want to reject and delete "${name}"?`,
+            async () => {
+                try {
+                    const res = await fetch(`/admin/api/food-types/reject/${id}`, { method: 'POST' });
+                    if (res.ok) {
+                        fetchFoodTypes();
+                        showToast(`Food-type "${name}" rejected.`, 'success');
+                    }
+                } catch { showToast('Network error while rejecting.', 'error'); }
+            },
+            'danger'
+        );
+    }
+
+    async function deleteFoodType(id, name, dishCount) {
+        if (dishCount > 0) {
+            showToast(`Cannot delete "${name}" — it is currently tagged on ${dishCount} dishes!`, 'error');
+            return;
+        }
+        showConfirm(
+            'Delete Food-Type',
+            `Permanently delete "${name}"?`,
+            async () => {
+                try {
+                    const res = await fetch(`/admin/api/food-types/delete/${id}`, { method: 'POST' });
+                    const data = await res.json();
+                    if (res.ok) { 
+                        fetchFoodTypes(); 
+                        showToast(`Food-type "${name}" deleted.`, 'success');
+                    }
+                    else { showToast(data.message || 'Failed to delete food type', 'error'); }
+                } catch { showToast('Network error. Please try again.', 'error'); }
+            },
+            'danger'
+        );
+    }
+</script>
+{% endblock %}

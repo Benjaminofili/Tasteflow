@@ -1,0 +1,82 @@
+<!-- Premium Confirmation Modal -->
+<div id="confirmModal" class="fixed inset-0 z-[200] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300 backdrop-blur-md bg-black/40">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-[0_32px_100px_rgba(0,0,0,0.5)] w-full max-w-sm overflow-hidden transform scale-95 transition-all duration-300 border border-white/10">
+        <div class="p-6 text-center">
+            <div id="modalIconContainer" class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <svg id="modalIcon" class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+            </div>
+            <h3 id="modalTitle" class="text-xl font-bold text-gray-900 dark:text-white mb-2"></h3>
+            <p id="modalMsg" class="text-sm text-gray-500 dark:text-gray-400 mb-6"></p>
+            
+            <div class="flex gap-3">
+                <button id="modalCancel" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    Cancel
+                </button>
+                <button id="modalConfirm" class="flex-1 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/30">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let modalCallback = null;
+
+    /**
+     * Show a premium confirmation modal.
+     * @param {string} title - The header title.
+     * @param {string} message - The body message.
+     * @param {function} callback - Function called if 'Confirm' is clicked.
+     * @param {string} type - 'danger' (red), 'warning' (orange), 'info' (blue).
+     */
+    function showConfirm(title, message, callback, type = 'info') {
+        const modal = document.getElementById('confirmModal');
+        const content = modal.querySelector('div');
+        const titleEl = document.getElementById('modalTitle');
+        const msgEl = document.getElementById('modalMsg');
+        const confirmBtn = document.getElementById('modalConfirm');
+        const cancelBtn = document.getElementById('modalCancel');
+        const iconContainer = document.getElementById('modalIconContainer');
+        const iconEl = document.getElementById('modalIcon');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        modalCallback = callback;
+
+        // Customize based on type
+        if (type === 'danger') {
+            confirmBtn.className = 'flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-all shadow-lg shadow-red-600/30';
+            iconContainer.className = 'w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4';
+            iconEl.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />';
+            iconEl.className = 'w-8 h-8 text-red-600 dark:text-red-400';
+        } else {
+            confirmBtn.className = 'flex-1 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/30';
+            iconContainer.className = 'w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4';
+            iconEl.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />';
+            iconEl.className = 'w-8 h-8 text-primary';
+        }
+
+        // Show Modal
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        content.classList.remove('scale-95');
+        content.classList.add('scale-100');
+
+        // Event Handling
+        const handleConfirm = () => {
+            closeModal();
+            if (modalCallback) modalCallback();
+        };
+
+        const closeModal = () => {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.add('scale-95');
+            content.classList.remove('scale-100');
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', closeModal);
+        };
+
+        confirmBtn.addEventListener('click', handleConfirm);
+        cancelBtn.addEventListener('click', closeModal);
+    }
+</script>

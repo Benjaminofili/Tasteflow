@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TasteFlow – Sign In</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand:      '#C84C2E',
+            'brand-dk': '#a83920',
+            herb:       '#87B42D',
+            cream:      '#FDF4E3',
+            charcoal:   '#2C2C2C',
+            body:       '#4A4A4A',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; }
+
+    .tf-input {
+      border: 1.5px solid #e5e7eb;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .tf-input:focus {
+      outline: none;
+      border-color: #C84C2E;
+      box-shadow: 0 0 0 3px rgba(200,76,46,.12);
+      background: #fff;
+    }
+    .tf-input::placeholder { color: #9ca3af; }
+    .tf-input.error { border-color: #ef4444; }
+
+    .btn-primary {
+      background: #C84C2E;
+      color: #fff;
+      font-weight: 700;
+      transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #a83920;
+      transform: scale(1.02);
+      box-shadow: 0 8px 24px rgba(200,76,46,.32);
+    }
+    .btn-primary:active:not(:disabled) { transform: scale(0.99); }
+    .btn-primary:disabled { opacity: 0.8; cursor: not-allowed; }
+
+    .eye-btn { transition: color 0.15s ease; }
+    .eye-btn:hover { color: #C84C2E; }
+
+    .social-btn {
+      border: 1.5px solid #e5e7eb;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    }
+    .social-btn:hover {
+      border-color: #C84C2E;
+      box-shadow: 0 2px 12px rgba(200,76,46,.13);
+      transform: translateY(-1px);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card-enter { animation: slideUp 0.45s ease forwards; }
+
+    .brand-panel {
+      background: linear-gradient(148deg, #C84C2E 0%, #9e3620 52%, #6e2210 100%);
+    }
+
+    @keyframes drift  { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-13px) rotate(4deg)} }
+    @keyframes drift2 { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(11px) rotate(-4deg)} }
+    .d1{animation:drift  6s ease-in-out infinite;}
+    .d2{animation:drift2 7s ease-in-out infinite;animation-delay:.9s;}
+    .d3{animation:drift  8s ease-in-out infinite;animation-delay:1.6s;}
+    .d4{animation:drift2 5s ease-in-out infinite;animation-delay:2.2s;}
+    .plate-float{animation:drift 5s ease-in-out infinite;animation-delay:.4s;}
+
+    #toast {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      transform: translateX(-50%) translateY(6px);
+    }
+    #toast.show { opacity: 1 !important; transform: translateX(-50%) translateY(0) !important; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.7s linear infinite; display: inline-block; }
+  </style>
+</head>
+<body class="min-h-screen flex bg-cream antialiased">
+
+<!-- ═══════════════════════════════
+     LEFT BRAND PANEL
+════════════════════════════════ -->
+<aside class="hidden lg:flex brand-panel w-[44%] xl:w-[40%] shrink-0 flex-col items-center justify-center relative overflow-hidden p-12">
+  <div class="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-white/5 pointer-events-none"></div>
+  <div class="absolute -bottom-24 -right-16 w-96 h-96 rounded-full bg-white/5 pointer-events-none"></div>
+
+  <!-- Floating icons -->
+  <div class="absolute top-8 left-8 d1 opacity-60">
+    <svg width="68" height="68" viewBox="0 0 68 68" fill="none"><circle cx="34" cy="34" r="32" fill="white" fill-opacity=".1"/><ellipse cx="34" cy="44" rx="19" ry="6" fill="white" fill-opacity=".28"/><rect x="15" y="30" width="38" height="10" rx="5" fill="white" fill-opacity=".48"/><rect x="17" y="35" width="34" height="4" rx="2" fill="#87B42D" fill-opacity=".65"/><rect x="13" y="37" width="42" height="9" rx="4.5" fill="white" fill-opacity=".32"/><ellipse cx="34" cy="28" rx="20" ry="8" fill="white" fill-opacity=".42"/></svg>
+  </div>
+  <div class="absolute top-12 right-8 d2 opacity-55">
+    <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="26" fill="white" fill-opacity=".08"/><polygon points="28,7 51,45 5,45" fill="white" fill-opacity=".38"/><circle cx="28" cy="30" r="5" fill="#9e3620" fill-opacity=".55"/><circle cx="20" cy="36" r="4" fill="#9e3620" fill-opacity=".45"/><circle cx="37" cy="35" r="3.5" fill="#87B42D" fill-opacity=".6"/></svg>
+  </div>
+  <div class="absolute bottom-16 left-10 d3 opacity-60">
+    <svg width="62" height="62" viewBox="0 0 62 62" fill="none"><circle cx="31" cy="31" r="29" fill="white" fill-opacity=".09"/><rect x="12" y="20" width="30" height="24" rx="6" fill="white" fill-opacity=".42"/><ellipse cx="27" cy="20" rx="15" ry="5" fill="white" fill-opacity=".55"/><path d="M42 26 Q52 26 52 34 Q52 42 42 42" stroke="white" stroke-width="3" stroke-linecap="round" fill="none" opacity=".45"/><path d="M22 14 Q24 8 22 4" stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity=".38"/><path d="M29 12 Q31 6 29 2" stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity=".28"/></svg>
+  </div>
+  <div class="absolute bottom-12 right-10 d4 opacity-50">
+    <svg width="50" height="50" viewBox="0 0 50 50" fill="none"><polygon points="25,4 28.5,18 42,18 31,26 35,40 25,32 15,40 19,26 8,18 21.5,18" fill="white" fill-opacity=".5"/></svg>
+  </div>
+
+  <div class="relative z-10 text-center text-white">
+    <div class="flex items-center justify-center gap-3 mb-10">
+      <span class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-brand font-black text-lg">T</span>
+      <span class="text-2xl font-extrabold tracking-tight">TasteFlow</span>
+    </div>
+    <div class="flex justify-center mb-8 plate-float">
+      <svg width="190" height="190" viewBox="0 0 190 190" fill="none"><ellipse cx="95" cy="170" rx="64" ry="11" fill="black" fill-opacity=".13"/><circle cx="95" cy="93" r="76" fill="white" fill-opacity=".12"/><circle cx="95" cy="93" r="68" fill="white" fill-opacity=".09"/><circle cx="95" cy="93" r="58" fill="white" fill-opacity=".08"/><path d="M63 93 Q75 71 95 93 Q115 115 127 93" stroke="white" stroke-width="5" stroke-linecap="round" fill="none" opacity=".68"/><path d="M58 103 Q70 81 90 103 Q110 125 122 103" stroke="white" stroke-width="3.5" stroke-linecap="round" fill="none" opacity=".4"/><circle cx="79" cy="83" r="6" fill="#87B42D" fill-opacity=".82"/><circle cx="111" cy="85" r="5" fill="#87B42D" fill-opacity=".68"/><circle cx="95" cy="77" r="4.5" fill="#87B42D" fill-opacity=".72"/><rect x="130" y="56" width="5" height="40" rx="2.5" fill="white" fill-opacity=".46"/><rect x="127" y="56" width="2" height="16" rx="1" fill="white" fill-opacity=".3"/><rect x="137" y="56" width="2" height="16" rx="1" fill="white" fill-opacity=".3"/><path d="M83 56 Q87 42 83 32" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".3"/><path d="M95 52 Q99 38 95 28" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".24"/><path d="M107 56 Q103 42 107 32" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".28"/></svg>
+    </div>
+    <h2 class="text-[27px] font-extrabold leading-snug mb-3">Your next great meal<br/>is one tap away.</h2>
+    <p class="text-white/65 text-sm leading-relaxed max-w-[250px] mx-auto">Hundreds of restaurants. Real-time tracking. Every craving, covered.</p>
+    <div class="flex items-center justify-center gap-7 mt-9">
+      <div class="text-center"><p class="text-2xl font-black">500+</p><p class="text-white/55 text-xs mt-0.5">Restaurants</p></div>
+      <div class="w-px h-7 bg-white/20"></div>
+      <div class="text-center"><p class="text-2xl font-black">4.9★</p><p class="text-white/55 text-xs mt-0.5">Avg Rating</p></div>
+      <div class="w-px h-7 bg-white/20"></div>
+      <div class="text-center"><p class="text-2xl font-black">30m</p><p class="text-white/55 text-xs mt-0.5">Delivery</p></div>
+    </div>
+  </div>
+</aside>
+
+
+<!-- ═══════════════════════════════
+     RIGHT FORM PANEL
+════════════════════════════════ -->
+<main class="flex-1 flex flex-col items-center justify-center min-h-screen p-6 sm:p-10 bg-cream">
+
+  <!-- Mobile logo -->
+  <a href="#" class="lg:hidden flex items-center gap-2 mb-8">
+    <span class="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white font-black text-sm">T</span>
+    <span class="text-xl font-extrabold text-brand tracking-tight">TasteFlow</span>
+  </a>
+
+  <div class="card-enter w-full max-w-[410px] bg-white rounded-2xl shadow-lg p-8 sm:p-10">
+
+    <div class="mb-8">
+      <h1 class="text-2xl sm:text-[27px] font-extrabold text-charcoal tracking-tight">Welcome back 👋</h1>
+      <p class="text-body text-sm mt-1.5">Sign in to continue to your TasteFlow account.</p>
+    </div>
+
+    <form id="login-form" onsubmit="handleLogin(event)" novalidate>
+
+      <!-- Email -->
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-charcoal mb-1.5" for="email">Email Address</label>
+        <div class="relative">
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+            <i class="fa-regular fa-envelope"></i>
+          </span>
+          <input id="email" type="email" placeholder="you@example.com" autocomplete="email"
+            class="tf-input w-full pl-10 pr-4 py-3 rounded-xl text-sm text-charcoal bg-gray-50/80"/>
+        </div>
+        <p id="email-err" class="text-red-500 text-xs mt-1.5 hidden">
+          <i class="fa-solid fa-circle-exclamation mr-1"></i>Please enter a valid email address.
+        </p>
+      </div>
+
+      <!-- Password -->
+      <div class="mb-2">
+        <label class="block text-xs font-semibold text-charcoal mb-1.5" for="password">Password</label>
+        <div class="relative">
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+            <i class="fa-solid fa-lock"></i>
+          </span>
+          <input id="password" type="password" placeholder="••••••••" autocomplete="current-password"
+            class="tf-input w-full pl-10 pr-11 py-3 rounded-xl text-sm text-charcoal bg-gray-50/80"/>
+          <button type="button" class="eye-btn absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
+            onclick="togglePw()" aria-label="Toggle password visibility">
+            <i id="eye-icon" class="fa-regular fa-eye"></i>
+          </button>
+        </div>
+        <p id="pw-err" class="text-red-500 text-xs mt-1.5 hidden">
+          <i class="fa-solid fa-circle-exclamation mr-1"></i>Please enter your password.
+        </p>
+      </div>
+
+      <!-- Forgot -->
+      <div class="flex justify-end mb-7">
+        <a href="#" class="text-xs font-semibold text-brand hover:underline">Forgot password?</a>
+      </div>
+
+      <!-- Submit -->
+      <button id="login-btn" type="submit"
+        class="btn-primary w-full py-3.5 rounded-xl text-sm flex items-center justify-center gap-2">
+        <span id="btn-label">Sign In</span>
+        <i id="btn-icon" class="fa-solid fa-arrow-right text-xs"></i>
+      </button>
+
+    </form>
+
+    <!-- Divider -->
+    <div class="flex items-center gap-3 my-6">
+      <div class="flex-1 h-px bg-gray-200"></div>
+      <span class="text-xs text-gray-400 font-medium">or continue with</span>
+      <div class="flex-1 h-px bg-gray-200"></div>
+    </div>
+
+    <!-- Social -->
+    <div class="grid grid-cols-2 gap-3 mb-7">
+      <button class="social-btn flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-charcoal bg-white">
+        <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.6 2.2 30.1 0 24 0 14.8 0 6.9 5.4 3 13.3l7.8 6C12.6 13.1 17.9 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.4 5.5-5 7.2l7.8 6C43.8 37.5 46.5 31.4 46.5 24.5z"/><path fill="#FBBC05" d="M10.8 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7L2.5 13.3A23.9 23.9 0 0 0 0 24c0 3.8.9 7.4 2.5 10.7l8.3-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.8-6c-2 1.4-4.6 2.2-7.4 2.2-6.1 0-11.4-3.6-13.2-9.3l-7.8 6C6.9 42.6 14.8 48 24 48z"/></svg>
+        Google
+      </button>
+      <button class="social-btn flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium text-charcoal bg-white">
+        <i class="fa-brands fa-apple text-base leading-none"></i> Apple
+      </button>
+    </div>
+
+    <div class="h-px bg-gray-100 mb-6"></div>
+
+    <!-- Register prompt -->
+    <p class="text-center text-sm text-body">
+      Don't have an account?
+      <a href="/register" class="text-brand font-semibold hover:underline ml-1">Register here</a>
+    </p>
+
+  </div>
+
+  <p class="text-center text-xs text-gray-400 mt-5 max-w-xs leading-relaxed">
+    By signing in you agree to TasteFlow's
+    <a href="#" class="underline hover:text-brand transition-colors">Terms of Service</a> and
+    <a href="#" class="underline hover:text-brand transition-colors">Privacy Policy</a>.
+  </p>
+</main>
+
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-6 left-1/2 opacity-0 pointer-events-none z-50
+  flex items-center gap-2.5 px-5 py-3 rounded-full shadow-xl text-white text-sm font-medium whitespace-nowrap"
+  style="background:#2C2C2C;">
+  <i id="toast-icon" class="fa-solid fa-circle-check text-herb text-base"></i>
+  <span id="toast-msg"></span>
+</div>
+
+
+<script>
+  function togglePw() {
+    const input = document.getElementById('password');
+    const icon  = document.getElementById('eye-icon');
+    const show  = input.type === 'password';
+    input.type  = show ? 'text' : 'password';
+    icon.className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+  }
+
+  function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+  document.getElementById('email').addEventListener('input', function() {
+    const err = document.getElementById('email-err');
+    if (isValidEmail(this.value)) {
+      err.classList.add('hidden');
+      this.classList.remove('error');
+    }
+  });
+  document.getElementById('password').addEventListener('input', function() {
+    const err = document.getElementById('pw-err');
+    if (this.value.length > 0) {
+      err.classList.add('hidden');
+      this.classList.remove('error');
+    }
+  });
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const emailEl = document.getElementById('email');
+    const pwEl    = document.getElementById('password');
+    const email   = emailEl.value.trim();
+    const pw      = pwEl.value;
+    let valid = true;
+
+    if (!isValidEmail(email)) {
+      document.getElementById('email-err').classList.remove('hidden');
+      emailEl.classList.add('error');
+      valid = false;
+    }
+    if (pw.length === 0) {
+      document.getElementById('pw-err').classList.remove('hidden');
+      pwEl.classList.add('error');
+      valid = false;
+    }
+    if (!valid) return;
+
+    const btn   = document.getElementById('login-btn');
+    const label = document.getElementById('btn-label');
+    const icon  = document.getElementById('btn-icon');
+    
+    // Set loading state
+    btn.disabled = true;
+    label.textContent = 'Signing in…';
+    icon.className = 'spinner fa-solid fa-circle-notch text-xs';
+
+    try {
+      // Call the Flask backend
+      const response = await fetch('/auth/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: pw })
+      });
+      
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle backend errors (e.g., wrong password)
+        showToast(data.error || 'Invalid email or password', 'error');
+        btn.disabled = false;
+        label.textContent = 'Sign In';
+        icon.className = 'fa-solid fa-arrow-right text-xs';
+        return;
+      }
+
+      // Success!
+      showToast('Signed in successfully — redirecting…', 'success');
+      
+      // Redirect based on role
+      setTimeout(() => {
+        if (data.user.role === 'owner') {
+          window.location.href = '/owner/dashboard';
+        } else if (data.user.role === 'admin') {
+          window.location.href = '/admin/dashboard';
+        } else {
+          window.location.href = '/dashboard'; // Go to dashboard for customers
+        }
+      }, 1000);
+
+    } catch (error) {
+      console.error('Login error:', error);
+      showToast('A network error occurred. Please try again.', 'error');
+      btn.disabled = false;
+      label.textContent = 'Sign In';
+      icon.className = 'fa-solid fa-arrow-right text-xs';
+    }
+  }
+
+  function showToast(msg, type) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-icon').className = type === 'success'
+      ? 'fa-solid fa-circle-check text-herb text-base'
+      : 'fa-solid fa-circle-xmark text-red-400 text-base';
+    document.getElementById('toast-msg').textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3200);
+  }
+</script>
+</body>
+</html>

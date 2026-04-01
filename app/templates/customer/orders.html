@@ -1,0 +1,287 @@
+{% extends 'customer/base.html' %}
+
+{% block title %}TasteFlow – My Orders{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Status pills premium style */
+  .pill-delivered { background:#f0fdf4; color:#064e3b; border:2px solid #bbf7d0; font-weight: 800; }
+  .pill-pending { background:#fffaf0; color:#7c2d12; border:2px solid #fed7aa; font-weight: 800; }
+  .pill-cancelled { background:#fef2f2; color:#7f1d1d; border:2px solid #fecaca; font-weight: 800; }
+  .pill-preparing { background:#fefdf0; color:#713f12; border:2px solid #fef08a; font-weight: 800; }
+
+  /* Order cards premium */
+  .order-card { 
+    background:#fff; 
+    border: 1.5px solid #f0e8d8; 
+    border-radius: 24px; 
+    overflow: hidden; 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  }
+  .order-card:hover { 
+    border-color: var(--primary); 
+    transform: translateY(-4px); 
+    box-shadow: 0 12px 30px rgba(200,76,46,0.08); 
+  }
+
+  /* Details Panel Glassmorphism */
+  .details-panel { 
+    display:none; 
+    background: #fdfaf5; 
+    border-top: 1.5px dashed #f0e8d8; 
+    padding: 24px;
+    animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .details-panel.open { display:block; }
+  @keyframes slideDown { from{opacity:0; transform:translateY(-10px)} to{opacity:1; transform:translateY(0)} }
+
+  /* Premium Filter Tabs */
+  .filter-tab { 
+    padding: 10px 22px; 
+    border-radius: 99px; 
+    font-size: 0.75rem; 
+    font-weight: 800; 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em;
+    cursor:pointer; 
+    transition:all 0.3s ease; 
+  }
+  .filter-tab.active { background:var(--primary); color:#fff; box-shadow: 0 8px 20px rgba(200,76,46,0.2); }
+  .filter-tab:not(.active) { background:#fff; color:#8a7060; border:1.5px solid #e2d5c3; }
+  .filter-tab:not(.active):hover { border-color:var(--primary); color:var(--primary); background: #fdf0e8; }
+
+  .search-bar { 
+    border: 1.5px solid #e2d5c3; 
+    background: #fdfaf5; 
+    border-radius: 16px; 
+    padding: 12px 16px 12px 42px; 
+    font-size: 0.85rem; 
+    outline: none; 
+    transition: all 0.3s; 
+    width: 100%; 
+  }
+  .search-bar:focus { border-color:var(--primary); background: #fff; box-shadow:0 0 0 4px rgba(200,76,46,0.08); }
+
+  /* Skeleton Shimmers */
+  @keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
+  .skeleton {
+    background: #f6f7f8;
+    background-image: linear-gradient(90deg, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+    background-repeat: no-repeat;
+    background-size: 800px 104px;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 12px;
+  }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .fade-up { animation: fadeUp 0.5s ease both; }
+
+  .rate-star { cursor:pointer; font-size:1.2rem; transition: all 0.2s; color: #e2d5c3; }
+  .rate-star:hover { transform: scale(1.3); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 pt-10 pb-8">
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 fade-up">
+    <div>
+      <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">My Journey</p>
+      <h1 class="font-display text-4xl font-black tracking-tight text-charcoal">Order History</h1>
+      <p id="total-orders-text" class="text-sm text-gray-500 mt-2">Connecting to our archives...</p>
+    </div>
+    <div class="relative w-full md:w-80">
+      <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+      <input type="text" placeholder="Search by restaurant or item…" class="search-bar" oninput="searchOrders(this.value)"/>
+    </div>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="flex flex-wrap gap-3 mt-8 fade-up" style="animation-delay: 0.1s">
+    <button class="filter-tab active" onclick="filterOrders('all',this)">All</button>
+    <button class="filter-tab" onclick="filterOrders('delivered',this)">Delivered</button>
+    <button class="filter-tab" onclick="filterOrders('pending',this)">Pending</button>
+    <button class="filter-tab" onclick="filterOrders('preparing',this)">In Progress</button>
+    <button class="filter-tab" onclick="filterOrders('cancelled',this)">Cancelled</button>
+  </div>
+</div>
+
+<main class="max-w-4xl mx-auto px-6 pb-32">
+  <div id="orderList" class="space-y-6">
+      <!-- Loading Skeletons -->
+      <div class="h-40 skeleton w-full"></div>
+      <div class="h-40 skeleton w-full"></div>
+      <div class="h-40 skeleton w-full"></div>
+  </div>
+
+  <div id="emptyState" class="hidden flex-col items-center justify-center py-24 text-center fade-up">
+    <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-4xl mb-6">🏜️</div>
+    <h3 class="font-display text-2xl font-black mb-2">No orders found</h3>
+    <p class="text-gray-500 text-sm mb-8 max-w-xs mx-auto">We couldn't find any orders matching your current selection.</p>
+    <button onclick="filterOrders('all', document.querySelector('.filter-tab'))" class="bg-primary text-white font-black px-8 py-3 rounded-2xl text-xs uppercase tracking-widest shadow-lg">Refresh History</button>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', fetchOrders);
+
+  async function fetchOrders() {
+      const container = document.getElementById('orderList');
+      
+      try {
+          const response = await fetch('/customer/api/orders');
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error);
+
+          document.getElementById('total-orders-text').innerHTML = `You've enjoyed <strong>${data.orders.length} culinary experiences</strong> with us.`;
+          container.innerHTML = '';
+
+          if (data.orders.length === 0) {
+              document.getElementById('emptyState').classList.remove('hidden');
+              document.getElementById('emptyState').classList.add('flex');
+              return;
+          }
+
+          data.orders.forEach((order, index) => {
+              const statusStyles = {
+                  'pending': { pill: 'pill-pending', icon: 'fa-regular fa-clock', text: 'Pending' },
+                  'preparing': { pill: 'pill-preparing', icon: 'fa-solid fa-fire-burner', text: 'In the Kitchen' },
+                  'out for delivery': { pill: 'pill-preparing', icon: 'fa-solid fa-motorcycle', text: 'Rider is Moving' },
+                  'delivered': { pill: 'pill-delivered', icon: 'fa-solid fa-check-double', text: 'Delivered' },
+                  'cancelled': { pill: 'pill-cancelled', icon: 'fa-solid fa-xmark', text: 'Cancelled' }
+              };
+
+              const s = statusStyles[order.status.toLowerCase()] || statusStyles['pending'];
+              const dateObj = new Date(order.order_date);
+              const dateStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+              
+              let searchStr = `${order.restaurant_name} ${order.status}`.toLowerCase();
+              let itemsHtml = '';
+              order.items.forEach(item => {
+                  searchStr += ` ${item.name.toLowerCase()}`;
+                  itemsHtml += `
+                    <div class="flex justify-between items-center text-sm font-medium">
+                      <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded bg-gray-50 flex items-center justify-center text-[10px] text-gray-400">×${item.quantity}</span>
+                        <span class="text-charcoal">${item.name}</span>
+                      </div>
+                      <span class="text-gray-400">₦${parseFloat(item.price * item.quantity).toLocaleString()}</span>
+                    </div>`;
+              });
+
+              const isActive = ['pending', 'preparing', 'out for delivery'].includes(order.status.toLowerCase());
+              const cardHtml = `
+                <div class="order-card fade-up" data-status="${order.status.toLowerCase()}" data-search="${searchStr}" style="animation-delay: ${index * 0.1}s">
+                  <div class="p-6">
+                    <div class="flex flex-col sm:flex-row gap-5">
+                      <div class="w-20 h-20 rounded-2xl flex-shrink-0 bg-gray-50 border border-gray-100 flex items-center justify-center text-3xl overflow-hidden shadow-inner">
+                        ${order.restaurant_logo ? `<img src="${order.restaurant_logo}" class="w-full h-full object-cover"/>` : '🍴'}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                          <div>
+                            <h3 class="font-black text-lg tracking-tight text-charcoal truncate">${order.restaurant_name}</h3>
+                            <div class="flex items-center gap-3 mt-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                <span>Order #TF-${order.id}</span>
+                                <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                                <span>${dateStr}</span>
+                            </div>
+                          </div>
+                          <span class="${s.pill} px-4 py-1.5 rounded-full text-[10px] uppercase tracking-tighter flex items-center gap-2 self-start ring-4 ring-white shadow-sm">
+                            <i class="${s.icon}"></i> ${s.text}
+                          </span>
+                        </div>
+                        <div class="flex items-center gap-6 mt-5 pt-5 border-t border-gray-100">
+                           <div>
+                             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Summary</p>
+                             <p class="font-bold text-sm text-charcoal">${order.items.length} items ordered</p>
+                           </div>
+                           <div>
+                             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Total Bill</p>
+                             <p class="font-black text-base text-primary">₦${parseFloat(order.total_amount).toLocaleString()}</p>
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row items-center justify-between mt-6 pt-5 border-t border-dashed border-gray-200 gap-4">
+                      <div class="flex items-center gap-2 w-full sm:w-auto">
+                        ${isActive ? `<a href="/customer/tracking/${order.id}" class="bg-primary text-white text-[10px] font-black px-5 py-3 rounded-xl uppercase tracking-widest shadow-lg hover:translate-y-[-2px] transition-all">Track Order</a>` : ''}
+                        <button type="button" class="text-[10px] font-black text-charcoal hover:bg-charcoal hover:text-white px-5 py-3 rounded-xl border-2 border-charcoal/20 uppercase tracking-widest transition-all" onclick="toggleDetails(this)">View Invoice</button>
+                      </div>
+                      ${order.status.toLowerCase() === 'delivered' ? `
+                        <div class="flex items-center gap-1">
+                          <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2">Rate Order:</span>
+                          <span class="rate-star" onclick="rateOrder(this,1)">★</span><span class="rate-star" onclick="rateOrder(this,2)">★</span><span class="rate-star" onclick="rateOrder(this,3)">★</span><span class="rate-star" onclick="rateOrder(this,4)">★</span><span class="rate-star" onclick="rateOrder(this,5)">★</span>
+                        </div>` : ''}
+                    </div>
+                  </div>
+                  <div class="details-panel">
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Detailed Breakdown</p>
+                    <div class="space-y-3 mb-6">
+                      ${itemsHtml}
+                    </div>
+                    </div>
+                  </div>
+                </div>
+              `;
+              container.insertAdjacentHTML('beforeend', cardHtml);
+          });
+          
+      } catch (error) {
+          console.error(error);
+          container.innerHTML = `<div class="p-10 text-center text-red-500 font-bold bg-white rounded-2xl border border-red-100">Heads up: We couldn't sync your orders. Please refresh.</div>`;
+      }
+  }
+
+  function toggleDetails(btn) {
+    const card = btn.closest('.order-card');
+    const panel = card.querySelector('.details-panel');
+    const isOpen = panel.classList.contains('open');
+    if (!isOpen) {
+      panel.classList.add('open');
+      btn.textContent = 'Hide Invoice';
+    } else {
+      panel.classList.remove('open');
+      btn.textContent = 'View Invoice';
+    }
+  }
+
+  function filterOrders(status, btn) {
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    
+    let targetStatus = status;
+    if (status === 'preparing') targetStatus = ['preparing', 'out for delivery'];
+
+    const cards = document.querySelectorAll('.order-card');
+    let visible = 0;
+    cards.forEach(card => {
+      const cardStatus = card.dataset.status;
+      let match = (status === 'all') || (Array.isArray(targetStatus) ? targetStatus.includes(cardStatus) : cardStatus === targetStatus);
+      card.style.display = match ? 'block' : 'none';
+      if (match) visible++;
+    });
+    document.getElementById('emptyState').classList.toggle('hidden', visible > 0);
+  }
+
+  function searchOrders(q) {
+    const cards = document.querySelectorAll('.order-card');
+    let visible = 0;
+    cards.forEach(card => {
+      const match = card.dataset.search.includes(q.toLowerCase()) || q === '';
+      card.style.display = match ? 'block' : 'none';
+      if (match) visible++;
+    });
+    document.getElementById('emptyState').classList.toggle('hidden', visible > 0);
+  }
+
+  function rateOrder(star, n) {
+    const stars = star.parentElement.querySelectorAll('.rate-star');
+    stars.forEach((s,i) => { s.style.color = i < n ? '#F5A623' : '#e2d5c3'; });
+    showToast(`Rated ${n} stars! We appreciate your taste.`);
+  }
+</script>
+{% endblock %}

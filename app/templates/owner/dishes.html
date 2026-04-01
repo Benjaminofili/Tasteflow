@@ -1,0 +1,221 @@
+{% extends 'owner/base.html' %}
+
+{% block title %}My Menu | TasteFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dish-card {
+        background: #fff;
+        border: 1.5px solid #f0e8d8;
+        border-radius: 28px;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+    }
+    .dish-card:hover {
+        transform: translateY(-8px);
+        border-color: var(--primary);
+        box-shadow: 0 20px 40px rgba(200,76,46,0.06);
+    }
+    .category-chip {
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 6px 14px;
+        border-radius: 100px;
+        background: rgba(255,255,255,0.9);
+        backdrop-filter: blur(4px);
+        color: var(--charcoal);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    /* Active Filter State */
+    .filter-btn {
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .filter-btn.active {
+        color: var(--primary);
+    }
+    .filter-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 6px;
+        height: 6px;
+        background: var(--primary);
+        border-radius: full;
+    }
+
+    @keyframes skeleton-shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+    }
+    .skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.5s infinite;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 lg:px-10 py-10">
+    
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 fade-up">
+        <div>
+            <p class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Inventory Management</p>
+            <h1 class="font-display text-4xl font-black tracking-tight text-charcoal">My Menu</h1>
+            <p class="text-gray-400 text-sm mt-2 font-medium">Curate and refine your restaurant's digital offering.</p>
+        </div>
+        <a href="/owner/dishes/add" class="flex items-center gap-3 bg-charcoal text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-xl active:translate-y-1">
+            <i class="fa-solid fa-plus"></i>
+            <span>Add New Creation</span>
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex items-center gap-8 border-b border-[#f0e8d8] mb-12 pb-4 overflow-x-auto hide-scrollbar fade-up" style="animation-delay: 0.1s">
+        <button onclick="setFilter('all', this)" class="filter-btn active text-[10px] font-black uppercase tracking-widest whitespace-nowrap">All Masterpieces</button>
+        <button onclick="setFilter('Appetizer', this)" class="filter-btn text-gray-400 hover:text-charcoal text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Appetizers</button>
+        <button onclick="setFilter('Main Course', this)" class="filter-btn text-gray-400 hover:text-charcoal text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Main Courses</button>
+        <button onclick="setFilter('Dessert', this)" class="filter-btn text-gray-400 hover:text-charcoal text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Desserts</button>
+        <button onclick="setFilter('Beverage', this)" class="filter-btn text-gray-400 hover:text-charcoal text-[10px] font-black uppercase tracking-widest whitespace-nowrap">Beverages</button>
+    </div>
+
+    <!-- Dish Grid -->
+    <div id="dishes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 fade-up" style="animation-delay: 0.2s">
+        <!-- Skeletons -->
+        <div class="dish-card h-[400px] skeleton rounded-[28px]"></div>
+        <div class="dish-card h-[400px] skeleton rounded-[28px]"></div>
+        <div class="dish-card h-[400px] skeleton rounded-[28px]"></div>
+        <div class="dish-card h-[400px] skeleton rounded-[28px]"></div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let allDishes = [];
+    let currentCategory = 'all';
+
+    document.addEventListener('DOMContentLoaded', fetchDishes);
+
+    async function fetchDishes() {
+        const grid = document.getElementById('dishes-grid');
+        try {
+            const response = await fetch('/owner/api/dishes', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+
+            if (!response.ok) throw new Error(data.error);
+
+            allDishes = data.dishes || [];
+            renderDishes();
+        } catch (error) {
+            console.error(error);
+            grid.innerHTML = `<div class="col-span-full py-20 text-center font-display text-xl text-red-500">Failed to load menu. Syncing error.</div>`;
+        }
+    }
+
+    function setFilter(cat, el) {
+        currentCategory = cat;
+        document.querySelectorAll('.filter-btn').forEach(b => {
+            b.classList.remove('active', 'text-charcoal');
+            b.classList.add('text-gray-400');
+        });
+        el.classList.add('active', 'text-charcoal');
+        el.classList.remove('text-gray-400');
+        renderDishes();
+    }
+
+    function renderDishes() {
+        const grid = document.getElementById('dishes-grid');
+        grid.innerHTML = '';
+
+        const filtered = currentCategory === 'all' 
+            ? allDishes 
+            : allDishes.filter(d => d.category_name === currentCategory);
+
+        if (filtered.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-full py-32 text-center bg-white rounded-[40px] border border-dashed border-[#f0e8d8]">
+                    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">🍳</div>
+                    <h3 class="font-display text-2xl font-black text-charcoal">Category is empty</h3>
+                    <p class="text-gray-400 text-sm mt-2 max-w-xs mx-auto font-medium">Ready to add a new signature dish to this collection?</p>
+                </div>
+            `;
+            return;
+        }
+
+        filtered.forEach(dish => {
+            const imgUrl = dish.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+            
+            const card = `
+                <div class="dish-card group">
+                    <div class="h-64 relative overflow-hidden bg-gray-100">
+                        <img src="${imgUrl}" alt="${dish.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                        <div class="absolute top-4 left-4">
+                            <span class="category-chip">${dish.category_name || 'Uncategorized'}</span>
+                        </div>
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                             <a href="/owner/dishes/edit/${dish.id}" class="w-12 h-12 rounded-xl bg-white text-charcoal flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-xl">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                             </a>
+                             <button onclick="deleteDish(${dish.id})" class="w-12 h-12 rounded-xl bg-white text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-xl">
+                                <i class="fa-solid fa-trash-can"></i>
+                             </button>
+                        </div>
+                    </div>
+                    <div class="p-8 flex flex-col flex-1">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-display font-black text-xl text-charcoal leading-tight truncate pr-4">${dish.name}</h3>
+                            <div class="flex items-center gap-1.5 px-2 py-1 rounded-full ${dish.is_available ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-500'} font-black text-[8px] uppercase tracking-tighter shadow-sm border ${dish.is_available ? 'border-emerald-100' : 'border-rose-100'}">
+                                <span class="w-1 h-1 rounded-full ${dish.is_available ? 'bg-emerald-500' : 'bg-rose-500'}"></span>
+                                ${dish.is_available ? 'Available' : 'Sold Out'}
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-xs font-medium leading-relaxed line-clamp-2 mb-6 flex-1">
+                            ${dish.description || 'No description available for this culinary masterpiece.'}
+                        </p>
+                        <div class="flex items-center justify-between mt-auto">
+                            <span class="font-display font-black text-2xl text-primary tracking-tighter">₦${parseFloat(dish.price).toLocaleString()}</span>
+                            <div class="px-3 py-1 bg-gray-50 rounded-lg text-[9px] font-black text-gray-400 uppercase tracking-widest border border-gray-100">
+                                TF-UNIT-${dish.id}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            grid.insertAdjacentHTML('beforeend', card);
+        });
+    }
+
+    async function deleteDish(id) {
+        if (!confirm('Permanently remove this dish from your menu?')) return;
+        
+        try {
+            const response = await fetch(`/owner/dishes/delete/${id}`, { 
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (response.ok) {
+                showToast('Dish archived successfully', 'success');
+                fetchDishes();
+            } else {
+                const data = await response.json();
+                showToast(data.error || 'Delete failed', 'error');
+            }
+        } catch (error) {
+            showToast('Network synchronization error', 'error');
+        }
+    }
+</script>
+{% endblock %}

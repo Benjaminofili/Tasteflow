@@ -1,0 +1,381 @@
+{% extends 'customer/base.html' %}
+
+{% block title %}TasteFlow – Discover Restaurants{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #C84C2E;
+        --cream: #FDF4E3;
+        --charcoal: #2C2C2C;
+    }
+    
+    .hero-gradient {
+        background: linear-gradient(135deg, #C84C2E 0%, #a83a1e 60%, #7a2910 100%);
+    }
+
+    .chip {
+        background: #fff;
+        color: var(--charcoal);
+        border: 1.5px solid #e2d5c3;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .chip:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(200, 76, 46, 0.1);
+    }
+
+    .chip-active {
+        background: var(--primary) !important;
+        color: #fff !important;
+        border-color: var(--primary) !important;
+        box-shadow: 0 8px 20px rgba(200, 76, 46, 0.25);
+    }
+
+    /* Skeleton Shimmer */
+    @keyframes shimmer {
+        0% { background-position: -400px 0; }
+        100% { background-position: 400px 0; }
+    }
+    .skeleton {
+        background: linear-gradient(90deg, #e3dac9 25%, #fdf4e3 50%, #e3dac9 75%);
+        background-size: 800px 100%;
+        animation: shimmer 1.6s infinite linear;
+        border-radius: 12px;
+    }
+
+    .card-hover {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card-hover:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    }
+    
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Premium Hero Section -->
+<div class="hero-gradient relative overflow-hidden pt-16 pb-24 px-6 mb-12 rounded-b-[60px] shadow-2xl">
+    <!-- Decorative Elements -->
+    <div class="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/5 blur-3xl"></div>
+    <div class="absolute bottom-10 left-10 w-40 h-40 rounded-full bg-white/5 blur-2xl"></div>
+
+    <div class="max-w-4xl mx-auto text-center relative z-10">
+        <p class="text-white/70 text-sm font-bold tracking-[0.2em] uppercase mb-4">Deliciousness Delivered</p>
+        <h1 class="font-display text-4xl md:text-6xl text-white font-bold mb-8 leading-tight">
+            What are you<br/><span class="text-white/90">craving today?</span>
+        </h1>
+        
+        <!-- Search Container -->
+        <div class="max-w-2xl mx-auto relative group">
+            <div class="absolute inset-0 bg-black/10 blur-xl rounded-full scale-95 group-focus-within:scale-100 transition-transform"></div>
+            <div class="relative flex items-center bg-white rounded-2xl shadow-2xl overflow-hidden p-1.5 transition-all focus-within:ring-4 focus-within:ring-white/20">
+                <div class="pl-4 pr-2 text-gray-400">
+                    <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                </div>
+                <input type="text" id="searchInput" onkeyup="handleSearch(event)" 
+                       placeholder="Search restaurants, cuisines, or dishes..." 
+                       class="w-full py-4 text-[#2C2C2C] outline-none text-base font-medium placeholder-gray-400 bg-transparent px-2">
+                <button onclick="runSearch()" class="bg-[#C84C2E] text-white h-12 px-8 rounded-xl font-bold hover:bg-[#a83a1e] transition-all shadow-lg active:scale-95 shrink-0">
+                    Search
+                </button>
+            </div>
+        </div>
+
+        <!-- Trend Chips (Dynamic Categories will inject here) -->
+        <div class="max-w-4xl mx-auto mt-10 overflow-hidden relative">
+            <!-- Fade masks for scroll -->
+            <div class="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-primary to-transparent z-10 pointer-events-none"></div>
+            <div class="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-primary to-transparent z-10 pointer-events-none"></div>
+            
+            <div id="category-chips" class="flex items-center gap-3 overflow-x-auto scrollbar-hide px-12 py-4 snap-x snap-mandatory">
+                 <button onclick="filterByCategory(null, this)" class="chip-active chip px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap shadow-sm snap-center">All</button>
+                 <!-- Categories will be injected here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-6">
+    <div class="flex items-end justify-between mb-8">
+        <div>
+            <h2 id="grid-title" class="font-display text-3xl font-bold text-charcoal">Featured Restaurants</h2>
+            <p class="text-gray-500 mt-1">Handpicked spots for your next meal</p>
+        </div>
+    </div>
+
+    <!-- Restaurants Grid -->
+    <div id="restaurants-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-20">
+        <!-- Skeleton Loading State (Default) -->
+        <div class="skeleton-card skeleton w-full h-[320px] rounded-3xl"></div>
+        <div class="skeleton-card skeleton w-full h-[320px] rounded-3xl"></div>
+        <div class="skeleton-card skeleton w-full h-[320px] rounded-3xl"></div>
+        <div class="skeleton-card skeleton w-full h-[320px] rounded-3xl"></div>
+    </div>
+</div>
+
+<!-- Newsletter Section -->
+<div class="max-w-7xl mx-auto px-6 mb-12">
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+        <h2 class="text-2xl font-bold text-charcoal mb-2">Join our newsletter</h2>
+        <p class="text-gray-500 mb-6">Stay in the loop with exclusive offers and top restaurant picks.</p>
+        <form id="newsletter-form" class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3" onsubmit="submitNewsletter(event)">
+            <input type="email" id="newsletter-email" required placeholder="Enter your email" class="border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#C84C2E]">
+            <button type="submit" class="bg-[#C84C2E] hover:bg-[#a83a1e] text-white font-bold rounded-xl px-6 py-3">Subscribe</button>
+        </form>
+        <p id="newsletter-message" class="mt-3 text-sm"></p>
+    </div>
+</div>
+
+<!-- Feedback Section -->
+<div class="max-w-7xl mx-auto px-6 mb-20">
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+        <h2 class="text-2xl font-bold text-charcoal mb-2">Share your feedback</h2>
+        <p class="text-gray-500 mb-6">Tell us how we can improve your TasteFlow experience.</p>
+        <form id="feedback-form" class="space-y-4" onsubmit="submitFeedback(event)">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input type="text" id="feedback-name" placeholder="Your name (optional)" class="border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#C84C2E]">
+                <select id="feedback-rating" required class="border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#C84C2E]">
+                    <option value="">Choose rating</option>
+                    <option value="5">5 – Excellent</option>
+                    <option value="4">4 – Great</option>
+                    <option value="3">3 – Good</option>
+                    <option value="2">2 – Fair</option>
+                    <option value="1">1 – Needs improvement</option>
+                </select>
+            </div>
+            <textarea id="feedback-comments" required rows="4" placeholder="Your feedback" class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#C84C2E]"></textarea>
+            <button type="submit" class="bg-[#1F2937] hover:bg-[#111827] text-white font-bold rounded-xl px-6 py-3">Send feedback</button>
+            <p id="feedback-message" class="text-sm"></p>
+        </form>
+    </div>
+</div>
+
+<!-- Template for Skeleton -->
+<template id="skeleton-template">
+    <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 flex flex-col h-full">
+        <div class="skeleton h-48 w-full rounded-none"></div>
+        <div class="p-6 space-y-4">
+            <div class="skeleton h-6 w-3/4"></div>
+            <div class="skeleton h-3 w-1/2"></div>
+            <div class="pt-4 border-t border-gray-50 flex gap-4">
+                <div class="skeleton h-4 w-12"></div>
+                <div class="skeleton h-4 w-12"></div>
+            </div>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let searchTimer;
+    let selectedCategoryId = null;
+    let selectedFoodTypeId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchCategories();
+        fetchRestaurants();
+    });
+
+    // 1. Fetch Categories for Filter Chips
+    async function fetchCategories() {
+        try {
+            const res = await fetch('/customer/api/restaurants/meta');
+            const data = await res.json();
+            
+            if (res.ok) {
+                const container = document.getElementById('category-chips');
+                const catHtml = data.categories.map(cat => `
+                    <button onclick="filterByCategory(${cat.id}, this)" 
+                            class="chip px-6 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap shadow-sm snap-center">
+                        ${cat.name}
+                    </button>
+                `).join('');
+                container.innerHTML = `<button onclick="filterByCategory(null, this)" class="chip-active chip px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap shadow-sm snap-center">All</button>` + catHtml;
+            }
+        } catch (err) { console.error('Error fetching meta:', err); }
+    }
+
+    function handleSearch(e) {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => runSearch(), 400);
+    }
+
+    function runSearch() {
+        const query = document.getElementById('searchInput').value.trim();
+        fetchRestaurants(query, selectedCategoryId);
+    }
+
+    function filterByCategory(id, el) {
+        // Toggle Active Class
+        document.querySelectorAll('#category-chips button').forEach(b => b.classList.remove('chip-active'));
+        if (el) el.classList.add('chip-active');
+        else document.querySelector('#category-chips button').classList.add('chip-active');
+
+        selectedCategoryId = id;
+        fetchRestaurants(document.getElementById('searchInput').value.trim(), id);
+        
+        // Update Title
+        const titleEl = document.getElementById('grid-title');
+        if (id && el) titleEl.textContent = `${el.textContent.trim()} Spots`;
+        else titleEl.textContent = 'Featured Restaurants';
+    }
+
+    async function fetchRestaurants(query = '', catId = null) {
+        const grid = document.getElementById('restaurants-grid');
+        
+        // Show Skeletons
+        grid.innerHTML = '';
+        const template = document.getElementById('skeleton-template');
+        for(let i=0; i<8; i++) {
+            grid.appendChild(template.content.cloneNode(true));
+        }
+
+        try {
+            let url = `/customer/api/restaurants/search?`;
+            if (query) url += `q=${encodeURIComponent(query)}&`;
+            if (catId) url += `category_id=${catId}&`;
+            
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            if (res.ok) {
+                if (data.restaurants.length === 0) {
+                    grid.innerHTML = `
+                        <div class="col-span-full py-20 text-center bg-white rounded-[40px] border border-dashed border-gray-200 shadow-sm">
+                            <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <i class="fa-solid fa-utensils text-gray-300 text-3xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-display font-bold text-charcoal">No matches found</h3>
+                            <p class="text-gray-500 mt-2 max-w-xs mx-auto">Try adjusting your filters or searching for something else.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                grid.innerHTML = data.restaurants.map(rest => {
+                    const imgUrl = rest.logo_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80';
+                    const rating = rest.avg_rating || '4.5';
+                    
+                    return `
+                        <a href="/customer/restaurant/${rest.id}" class="group card-hover bg-white rounded-[32px] overflow-hidden shadow-sm border border-gray-100 flex flex-col h-full bg-white">
+                            <div class="h-52 w-full relative overflow-hidden bg-gray-50">
+                                <img src="${imgUrl}" alt="${rest.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"/>
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                                    <span class="text-white font-bold text-sm tracking-wide">View Menu <i class="fa-solid fa-arrow-right ml-1"></i></span>
+                                </div>
+                                <div class="absolute top-4 left-4">
+                                    <span class="bg-white/95 backdrop-blur text-[10px] font-bold px-3 py-1.5 rounded-full text-charcoal shadow-xl flex items-center gap-1.5 uppercase tracking-wider">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Open Now
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="p-6 flex flex-col flex-1">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="font-display font-bold text-xl text-charcoal transition-colors group-hover:text-primary leading-tight line-clamp-1">${rest.name}</h3>
+                                </div>
+                                <p class="text-sm text-gray-500 mb-4 line-clamp-1">
+                                    <i class="fa-solid fa-location-dot mr-1.5 text-gray-300"></i> ${rest.address || 'Location unavailable'}
+                                </p>
+                                
+                                <div class="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex items-center gap-1.5">
+                                            <i class="fa-solid fa-star text-amber-400 text-xs shadow-sm"></i>
+                                            <span class="text-sm font-bold text-charcoal">${rating}</span>
+                                        </div>
+                                        <span class="text-gray-200">|</span>
+                                        <span class="text-xs font-medium text-gray-500">${rest.review_count || '0'} reviews</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 text-xs font-semibold text-primary/80">
+                                        <i class="fa-regular fa-clock"></i> 25m
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
+            }
+        } catch (err) {
+            console.error(err);
+            grid.innerHTML = `<div class="col-span-full p-10 text-center text-red-500 font-medium">Network error. Please try refreshing.</div>`;
+        }
+    }
+
+    async function submitNewsletter(event) {
+        event.preventDefault();
+        const emailEl = document.getElementById('newsletter-email');
+        const messageEl = document.getElementById('newsletter-message');
+
+        const email = emailEl.value.trim();
+        if (!email) {
+            messageEl.textContent = 'Please enter an email address.';
+            messageEl.className = 'text-red-500';
+            return;
+        }
+
+        try {
+            const res = await fetch('/customer/api/newsletter', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email})
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                messageEl.textContent = 'Thanks! You are now subscribed.';
+                messageEl.className = 'text-green-600';
+                emailEl.value = '';
+            } else {
+                messageEl.textContent = data.error || 'Subscription failed. Please try again.';
+                messageEl.className = 'text-red-500';
+            }
+        } catch (error) {
+            messageEl.textContent = 'Network error. Could not subscribe.';
+            messageEl.className = 'text-red-500';
+        }
+    }
+
+    async function submitFeedback(event) {
+        event.preventDefault();
+        const name = document.getElementById('feedback-name').value.trim();
+        const rating = parseInt(document.getElementById('feedback-rating').value, 10);
+        const comments = document.getElementById('feedback-comments').value.trim();
+        const messageEl = document.getElementById('feedback-message');
+
+        if (!rating || rating < 1 || rating > 5 || !comments) {
+            messageEl.textContent = 'Please choose a rating and enter your comments.';
+            messageEl.className = 'text-red-500';
+            return;
+        }
+
+        try {
+            const res = await fetch('/customer/api/feedback', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, rating, comments})
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                messageEl.textContent = 'Feedback submitted. Thank you!';
+                messageEl.className = 'text-green-600';
+                document.getElementById('feedback-form').reset();
+            } else {
+                messageEl.textContent = data.error || 'Could not submit feedback.';
+                messageEl.className = 'text-red-500';
+            }
+        } catch (error) {
+            messageEl.textContent = 'Network error. Could not submit feedback.';
+            messageEl.className = 'text-red-500';
+        }
+    }
+</script>
+{% endblock %}

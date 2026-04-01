@@ -1,0 +1,297 @@
+{% extends 'customer/base.html' %}
+
+{% block title %}TasteFlow – Restaurant Menu{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Cover parallax & premium enhancements */
+  #rest-cover { 
+    background-size: cover; 
+    background-position: center; 
+    transition: background-image 0.6s ease-in-out;
+  }
+  .header-gradient {
+    background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 50%, var(--cream) 100%);
+  }
+
+  /* Glassmorphism components */
+  .glass-pill {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  .glass-btn {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+  }
+  .glass-btn:hover { background: rgba(255, 255, 255, 0.3); transform: scale(1.05); }
+
+  /* Dish cards - matching dashboard.html premium style */
+  .dish-card { 
+    background: #fff;
+    border: 1.5px solid #f0e8d8;
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .dish-card:hover { 
+    transform: translateY(-4px);
+    border-color: var(--primary);
+    box-shadow: 0 12px 30px rgba(200,76,46,0.12); 
+  }
+
+  /* Shimmer Loading */
+  @keyframes shimmer {
+    0% { background-position: -468px 0; }
+    100% { background-position: 468px 0; }
+  }
+  .skeleton {
+    background: #f6f7f8;
+    background-image: linear-gradient(90deg, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+    background-repeat: no-repeat;
+    background-size: 800px 104px;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 12px;
+  }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  .fade-up { animation: fadeUp 0.5s ease backwards; }
+
+  /* Floating cart button glass effect */
+  #cartBtn {
+    background: rgba(200, 76, 46, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 40px rgba(200, 76, 46, 0.4);
+  }
+</style>
+{% endblock %}
+
+{% block header %}
+{{ super() }}
+
+<!-- PREMIUM RESTAURANT HEADER -->
+<div id="rest-cover" class="relative h-[340px] flex items-end">
+  <!-- Dynamic Overlay -->
+  <div class="absolute inset-0 header-gradient z-0"></div>
+  
+  <div class="relative w-full pb-10 px-6 z-10 text-white max-w-4xl mx-auto">
+    <!-- Back Button -->
+    <a href="/customer/dashboard" class="absolute left-6 -top-52 w-11 h-11 glass-btn rounded-full flex items-center justify-center text-white">
+      <i class="fa-solid fa-arrow-left"></i>
+    </a>
+    
+    <div class="fade-up">
+        <h1 id="rest-title" class="font-display font-bold text-4xl sm:text-5xl drop-shadow-lg tracking-tight">
+            <span class="skeleton h-10 w-48 inline-block align-middle"></span>
+        </h1>
+        
+        <div class="flex flex-wrap items-center gap-4 mt-6">
+            <span id="rest-meta-address" class="glass-pill px-4 py-1.5 rounded-full text-sm font-medium flex items-center gap-2">
+                <i class="fa-solid fa-location-dot opacity-80"></i>
+                <span class="opacity-90">Loading...</span>
+            </span>
+            
+            <div class="flex items-center gap-3">
+                <span class="glass-pill px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-star text-yellow-400"></i>
+                    4.8
+                </span>
+                <span class="glass-pill px-4 py-1.5 rounded-full text-sm font-medium flex items-center gap-2">
+                    <i class="fa-regular fa-clock opacity-80"></i>
+                    25-35 min
+                </span>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<main class="max-w-4xl mx-auto px-6 pt-10 pb-32">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+        <h2 class="font-display font-bold text-2xl tracking-tight">Our Menu</h2>
+        <p class="text-gray-500 text-sm mt-1">Authentic flavors, crafted for you.</p>
+    </div>
+    <div class="hidden sm:flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>TasteFlow Verified</span>
+    </div>
+  </div>
+  
+  <div id="menu-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Skeleton Loaders -->
+      {% for i in range(4) %}
+      <div class="skeleton-item bg-white rounded-2xl p-4 flex gap-4 border border-[#f0e8d8]">
+        <div class="w-24 h-24 skeleton shrink-0"></div>
+        <div class="flex-1 space-y-3">
+            <div class="h-5 skeleton w-3/4"></div>
+            <div class="h-3 skeleton w-full"></div>
+            <div class="flex items-center justify-between pt-2">
+                <div class="h-6 skeleton w-16"></div>
+                <div class="h-10 w-10 skeleton rounded-full"></div>
+            </div>
+        </div>
+      </div>
+      {% endfor %}
+  </div>
+</main>
+
+<!-- PREMIUM FLOATING CART -->
+<div class="fixed bottom-0 left-0 right-0 p-6 z-50 pointer-events-none">
+  <div class="max-w-md mx-auto">
+    <button id="cartBtn" onclick="window.location.href='/customer/cart'" class="hidden w-full pointer-events-auto flex items-center justify-between px-7 py-4 rounded-full font-bold text-white transition-all transform hover:scale-[1.03] active:scale-95">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+            <i class="fa-solid fa-bag-shopping"></i>
+        </div>
+        <div class="text-left">
+            <p id="cartText" class="text-sm">View Cart (0 items)</p>
+            <p class="text-[10px] opacity-70 uppercase tracking-wide">Checkout Securely</p>
+        </div>
+      </div>
+      <span id="cartTotal" class="text-xl font-display"></span>
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let currentRestaurantId = null;
+  let cart = JSON.parse(localStorage.getItem('tasteflow_cart')) || [];
+
+  document.addEventListener('DOMContentLoaded', () => {
+      updateCartButton();
+      
+      const pathParts = window.location.pathname.split('/');
+      currentRestaurantId = pathParts[pathParts.length - 1];
+      
+      if (currentRestaurantId && !isNaN(currentRestaurantId)) {
+          fetchRestaurantMenu(currentRestaurantId);
+      } else {
+          showToast('Invalid restaurant link.', 'error');
+          document.getElementById('menu-container').innerHTML = '<p class="text-center text-red-500 py-10">Invalid restaurant connection.</p>';
+      }
+  });
+
+  async function fetchRestaurantMenu(id) {
+      try {
+          const response = await fetch(`/customer/api/restaurant/${id}`);
+          const data = await response.json();
+
+          if (!response.ok) throw new Error(data.error);
+
+          // Header Update
+          document.getElementById('rest-title').textContent = data.restaurant.name;
+          document.getElementById('rest-meta-address').querySelector('span').textContent = data.restaurant.address || 'Lagos, Nigeria';
+          document.getElementById('rest-cover').style.backgroundImage = `url('${data.restaurant.logo_url || 'https://images.unsplash.com/photo-1555126634-323283e090fa?w=1400&q=85'}')`;
+
+          const container = document.getElementById('menu-container');
+          container.innerHTML = '';
+
+          if (!data.dishes || data.dishes.length === 0) {
+              container.innerHTML = '<div class="col-span-full py-20 text-center text-gray-400 font-medium">This restaurant hasn\'t uploaded their menu yet.</div>';
+              return;
+          }
+
+          data.dishes.forEach((dish, idx) => {
+              if (!dish.is_available) return;
+              
+              const imgUrl = dish.image_url || 'https://via.placeholder.com/150?text=TasteFlow';
+              const dishJson = JSON.stringify({
+                  id: dish.id,
+                  name: dish.name,
+                  price: parseFloat(dish.price),
+                  image_url: imgUrl,
+                  restaurant_id: currentRestaurantId
+              }).replace(/"/g, '&quot;');
+
+              const card = `
+                <div class="dish-card p-4 flex gap-4 fade-up" style="animation-delay: ${idx * 0.1}s">
+                  <div class="w-24 h-24 rounded-2xl overflow-hidden shrink-0 bg-gray-50 border border-gray-100 shadow-sm">
+                    <img src="${imgUrl}" alt="${dish.name}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"/>
+                  </div>
+                  <div class="flex-1 flex flex-col justify-between py-0.5">
+                    <div>
+                      <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-charcoal text-base leading-tight">${dish.name}</h3>
+                      </div>
+                      <p class="text-xs text-gray-500 mt-1 lines-2 limit-text">${dish.description || 'Delicately prepared with fresh ingredients.'}</p>
+                    </div>
+                    <div class="flex items-center justify-between mt-3">
+                      <span class="font-bold text-primary text-lg">₦${parseFloat(dish.price).toLocaleString()}</span>
+                      <button type="button" onclick="addToCart(this, ${dishJson})" class="w-10 h-10 rounded-full bg-[#fdf0e8] text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all transform active:scale-90 shadow-sm">
+                        <i class="fa-solid fa-plus"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+              container.insertAdjacentHTML('beforeend', card);
+          });
+
+      } catch (error) {
+          console.error("Error:", error);
+          showToast('Failed to load menu.', 'error');
+          document.getElementById('menu-container').innerHTML = '<p class="col-span-full text-center text-red-500 py-10">Connection error. Please try again.</p>';
+      }
+  }
+
+  function addToCart(btn, dish) {
+      if (cart.length > 0 && cart[0].restaurant_id !== dish.restaurant_id) {
+          if(confirm("Your cart contains items from another restaurant. Clear cart and start a new order?")) {
+              cart = [];
+          } else {
+              return;
+          }
+      }
+
+      const existingItem = cart.find(item => item.id === dish.id);
+      if (existingItem) {
+          existingItem.quantity += 1;
+      } else {
+          dish.quantity = 1;
+          cart.push(dish);
+      }
+
+      localStorage.setItem('tasteflow_cart', JSON.stringify(cart));
+      updateCartButton();
+      showToast('Added to your bag!');
+
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+      btn.className = 'w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center scale-110 transition-all';
+      setTimeout(() => {
+          btn.innerHTML = originalHtml;
+          btn.className = 'w-10 h-10 rounded-full bg-[#fdf0e8] text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all transform active:scale-90 shadow-sm';
+      }, 1200);
+  }
+
+  function updateCartButton() {
+      const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+      const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      const countTop = document.getElementById('cartCountTop');
+      if (countTop) countTop.textContent = cartCount;
+
+      const cartBtn = document.getElementById('cartBtn');
+      if (cartCount > 0) {
+          document.getElementById('cartText').textContent = `View Cart (${cartCount} items)`;
+          document.getElementById('cartTotal').textContent = `₦${cartTotal.toLocaleString()}`;
+          cartBtn.classList.remove('hidden', 'scale-95', 'opacity-0');
+          cartBtn.classList.add('flex', 'scale-100', 'opacity-100');
+      } else {
+          cartBtn.classList.add('hidden');
+          cartBtn.classList.remove('flex');
+      }
+  }
+</script>
+{% endblock %}

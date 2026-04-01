@@ -1,0 +1,345 @@
+{% extends 'owner/base.html' %}
+
+{% block title %}Owner Dashboard | TasteFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Stats Card Premium */
+    .stat-card {
+        background: #fff;
+        border: 1.5px solid #f0e8d8;
+        border-radius: 28px;
+        padding: 32px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .stat-card:hover {
+        transform: translateY(-6px);
+        border-color: var(--primary);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+    }
+    .stat-card::before {
+        content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: radial-gradient(circle, rgba(200,76,46,0.03) 0%, transparent 70%);
+        opacity: 0; transition: opacity 0.4s; pointer-events: none;
+    }
+    .stat-card:hover::before { opacity: 1; }
+
+    /* Skeleton Loading Shimmer */
+    @keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
+    .skeleton {
+        background: #f6f7f8;
+        background-image: linear-gradient(90deg, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+        background-repeat: no-repeat;
+        background-size: 800px 104px;
+        animation: shimmer 1.5s infinite linear;
+        border-radius: 12px;
+    }
+
+    /* Order Card snap scroll */
+    .order-snap-card {
+        scroll-snap-align: center;
+        flex-shrink: 0;
+        width: 320px;
+        background: #fff;
+        border: 1.5px solid #f0e8d8;
+        border-radius: 24px;
+        padding: 24px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .order-snap-card:hover { border-color: var(--primary); transform: scale(1.02); }
+    .order-snap-card.active { border-color: var(--primary); background: #fffaf8; box-shadow: 0 10px 30px rgba(200,76,46,0.08); }
+
+    /* Side Panel Details */
+    .details-pane {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 32px;
+        border: 1.5px solid #f0e8d8;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.04);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 lg:px-10 py-10">
+    
+    <!-- Welcome Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 fade-up">
+        <div>
+            <p class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Operations Overview</p>
+            <h1 id="welcome-header" class="font-display text-4xl font-black tracking-tight text-charcoal">Dashboard</h1>
+            <p id="welcome-text" class="text-gray-400 text-sm mt-2 font-medium">Syncing with your kitchen's pulse...</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="hidden sm:flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-[#f0e8d8] shadow-sm">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-[10px] font-black uppercase tracking-wider text-charcoal">Kitchen Live</span>
+            </div>
+            <button onclick="fetchDashboardData()" class="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-[#f0e8d8] text-gray-400 hover:text-primary transition-all">
+                <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="flex flex-col xl:flex-row gap-10">
+        <!-- Main Scrollable Area -->
+        <div class="flex-1 space-y-12 min-w-0">
+            
+            <!-- Key Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-up" style="animation-delay: 0.1s">
+                <!-- Stat 1 -->
+                <div class="stat-card">
+                    <div class="flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-xl shadow-inner">
+                            <i class="fa-solid fa-utensils"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Menu Items</p>
+                            <h3 id="stat-menu-items" class="font-display text-3xl font-black text-charcoal">--</h3>
+                        </div>
+                    </div>
+                </div>
+                <!-- Stat 2 -->
+                <div class="stat-card">
+                    <div class="flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-xl shadow-inner">
+                            <i class="fa-solid fa-coins"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">30D Revenue</p>
+                            <h3 id="stat-revenue" class="font-display text-3xl font-black text-charcoal">₦--</h3>
+                        </div>
+                    </div>
+                </div>
+                <!-- Stat 3 -->
+                <div class="stat-card">
+                    <div class="flex items-center gap-5">
+                        <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-xl shadow-inner">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Open Orders</p>
+                            <h3 id="stat-recent" class="font-display text-3xl font-black text-charcoal">--</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 fade-up" style="animation-delay: 0.2s">
+                <a href="/owner/dishes" class="flex items-center justify-between p-6 bg-white rounded-[24px] border border-[#f0e8d8] hover:border-primary group transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-gray-50 text-gray-400 group-hover:bg-primary group-hover:text-white transition-all flex items-center justify-center">
+                            <i class="fa-solid fa-list-check text-lg"></i>
+                        </div>
+                        <span class="font-display font-bold text-xl tracking-tight">Expand Menu</span>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-gray-300 group-hover:text-primary group-hover:translate-x-2 transition-all"></i>
+                </a>
+                <a href="/owner/orders" class="flex items-center justify-between p-6 bg-white rounded-[24px] border border-[#f0e8d8] hover:border-primary group transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-gray-50 text-gray-400 group-hover:bg-primary group-hover:text-white transition-all flex items-center justify-center">
+                            <i class="fa-solid fa-bolt-lightning text-lg"></i>
+                        </div>
+                        <span class="font-display font-bold text-xl tracking-tight">Live Console</span>
+                    </div>
+                    <i class="fa-solid fa-arrow-right text-gray-300 group-hover:text-primary group-hover:translate-x-2 transition-all"></i>
+                </a>
+            </div>
+
+            <!-- Recent Orders Section -->
+            <div class="fade-up" style="animation-delay: 0.3s">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="font-display text-2xl font-black tracking-tight">Latest Requests</h2>
+                    <a href="/owner/orders" class="text-[10px] font-black text-primary uppercase tracking-widest border-b-2 border-primary/20 hover:border-primary transition-all pb-1">View Archives</a>
+                </div>
+                
+                <div id="recent-orders-container" class="flex gap-6 overflow-x-auto pb-10 hide-scrollbar snap-x">
+                    <!-- Skeletons -->
+                    <div class="order-snap-card skeleton h-48"></div>
+                    <div class="order-snap-card skeleton h-48"></div>
+                    <div class="order-snap-card skeleton h-48"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sticky Detail Sidepanel -->
+        <div class="w-full xl:w-[400px] shrink-0 fade-up" style="animation-delay: 0.4s">
+            <div id="order-details-pane" class="hidden details-pane sticky top-10 flex flex-col h-[calc(100vh-8rem)] overflow-hidden">
+                <div class="p-8 border-b border-[#f0e8d8] bg-gray-50/30">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h2 id="detail-order-id" class="font-display text-2xl font-black text-charcoal">#--</h2>
+                            <p id="detail-order-date" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">--</p>
+                        </div>
+                        <span id="detail-status-badge" class="px-4 py-1.5 text-[10px] font-black uppercase tracking-tighter rounded-full shadow-sm">--</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-8 space-y-10 hide-scrollbar">
+                    <!-- Customer -->
+                    <section>
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4">Requester Details</p>
+                        <div class="flex items-center gap-4">
+                            <div id="detail-customer-initials" class="w-14 h-14 bg-primary/5 rounded-2xl flex items-center justify-center text-primary font-black text-xl border border-primary/10">
+                                --
+                            </div>
+                            <div>
+                                <h4 id="detail-customer-name" class="font-display font-bold text-lg text-charcoal">--</h4>
+                                <p id="detail-customer-phone" class="text-xs font-medium text-gray-400">...</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Summary -->
+                    <section class="border-t border-dashed border-[#f0e8d8] pt-8">
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4">Financial Snap</p>
+                        <div class="space-y-4">
+                             <div class="flex justify-between items-end">
+                                 <span class="text-sm font-medium text-gray-500">Service Fee Incl.</span>
+                                 <span id="detail-total" class="font-display text-3xl font-black text-primary tracking-tighter">₦--</span>
+                             </div>
+                        </div>
+                    </section>
+
+                    <div class="pt-4">
+                         <button onclick="showToast('Order management restricted in demo mode. Visit Live Console.')" class="w-full bg-charcoal text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-lg active:translate-y-1">
+                             ENTER LIVE CONSOLE
+                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State Detail -->
+            <div id="no-order-selected" class="details-pane h-[calc(100vh-8rem)] sticky top-10 flex flex-col items-center justify-center text-center p-10">
+                <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-3xl mb-6 shadow-inner">🍲</div>
+                <h3 class="font-display text-xl font-bold text-charcoal">Select an order</h3>
+                <p class="text-gray-400 text-xs mt-3 max-w-[200px] leading-relaxed font-medium">Click on any request to view details and manage the kitchen flow.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let globalOrders = [];
+
+    document.addEventListener('DOMContentLoaded', fetchDashboardData);
+
+    async function fetchDashboardData() {
+        try {
+            const response = await fetch('/owner/api/dashboard');
+            const data = await response.json();
+
+            if (!response.ok) {
+                if (data.needs_profile) { window.location.href = '/owner/profile'; return; }
+                throw new Error(data.error);
+            }
+
+            // Header sync
+            document.getElementById('welcome-header').textContent = data.restaurant.name;
+            document.getElementById('welcome-text').textContent = `Manage your culinary empire at ${data.restaurant.name}`;
+
+            // Stats sync
+            document.getElementById('stat-menu-items').textContent = data.stats.dishes_count;
+            document.getElementById('stat-revenue').textContent = `₦${parseFloat(data.stats.total_revenue).toLocaleString()}`;
+            document.getElementById('stat-recent').textContent = data.stats.recent_orders.length;
+
+            // Orders sync
+            globalOrders = data.stats.recent_orders;
+            renderRecentOrders(globalOrders);
+
+            if (globalOrders.length > 0) {
+                showOrderDetails(globalOrders[0].id);
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('Sync failed. Reconnecting...', 'error');
+        }
+    }
+
+    function renderRecentOrders(orders) {
+        const container = document.getElementById('recent-orders-container');
+        container.innerHTML = '';
+
+        if (orders.length === 0) {
+            container.innerHTML = `<div class="p-10 text-center w-full bg-white rounded-3xl border border-dashed border-[#f0e8d8] text-gray-400 font-bold text-xs uppercase tracking-widest">No active requests</div>`;
+            return;
+        }
+
+        orders.forEach(order => {
+            const toneColors = {
+                'warning': 'bg-amber-50 text-amber-500',
+                'success': 'bg-emerald-50 text-emerald-500',
+                'danger': 'bg-rose-50 text-rose-500',
+                'primary': 'bg-primary/5 text-primary',
+                'secondary': 'bg-gray-50 text-gray-500'
+            };
+            const badgeClass = toneColors[order.status_tone] || toneColors['secondary'];
+            const timeStr = new Date(order.order_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+            const card = `
+                <div onclick="showOrderDetails(${order.id}, this)" class="order-snap-card snap-center flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-5">
+                            <span class="font-display font-black text-2xl text-charcoal tracking-tighter">#${order.id}</span>
+                            <span class="px-3 py-1 text-[9px] font-black uppercase tracking-tighter ${badgeClass} rounded-full shadow-sm">${order.status_label}</span>
+                        </div>
+                        <h3 class="font-display font-bold text-lg text-charcoal truncate">${order.customer_name}</h3>
+                        <p class="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-regular fa-clock"></i> ${timeStr}
+                        </p>
+                    </div>
+                    <div class="mt-8 pt-5 border-t border-gray-50 flex justify-between items-center">
+                        <span class="font-display font-black text-xl text-primary tracking-tighter">₦${order.total_amount.toLocaleString()}</span>
+                        <div class="w-8 h-8 rounded-full bg-primary/5 text-primary flex items-center justify-center text-xs group-hover:bg-primary group-hover:text-white transition-all">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', card);
+        });
+    }
+
+    function showOrderDetails(orderId, el) {
+        const order = globalOrders.find(o => o.id === orderId);
+        if (!order) return;
+
+        // UI toggles
+        document.getElementById('no-order-selected').classList.add('hidden');
+        document.getElementById('order-details-pane').classList.remove('hidden');
+
+        // Selection style
+        document.querySelectorAll('.order-snap-card').forEach(c => c.classList.remove('active'));
+        if (el) el.classList.add('active');
+
+        // Sync details
+        document.getElementById('detail-order-id').textContent = `#TF-${order.id}`;
+        document.getElementById('detail-order-date').textContent = `RECEIVED AT ${new Date(order.order_date).toLocaleTimeString()}`;
+        document.getElementById('detail-customer-name').textContent = order.customer_name;
+        document.getElementById('detail-total').textContent = `₦${order.total_amount.toLocaleString()}`;
+
+        const initials = order.customer_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        document.getElementById('detail-customer-initials').textContent = initials;
+
+        const badge = document.getElementById('detail-status-badge');
+        badge.textContent = order.status_label;
+        const toneColors = {
+            'warning': 'bg-amber-50 text-amber-500',
+            'success': 'bg-emerald-50 text-emerald-500',
+            'danger': 'bg-rose-50 text-rose-500',
+            'primary': 'bg-primary/5 text-primary',
+            'secondary': 'bg-gray-50 text-gray-500'
+        };
+        badge.className = `px-4 py-1.5 text-[10px] font-black uppercase tracking-tighter rounded-full shadow-sm ${toneColors[order.status_tone] || toneColors['secondary']}`;
+    }
+</script>
+{% endblock %}

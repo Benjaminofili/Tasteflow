@@ -1,0 +1,375 @@
+{% extends 'customer/base.html' %}
+
+{% block title %}TasteFlow – Checkout{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Premium Form Elements */
+  .premium-input {
+    width:100%; padding:14px 16px; border-radius:16px;
+    border:1.5px solid #e2d5c3; background:#fdfaf5;
+    font-size:0.9rem; font-family:'DM Sans',sans-serif;
+    transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); outline:none;
+    color:var(--charcoal);
+  }
+  .premium-input:focus { border-color:var(--primary); background:#fff; box-shadow:0 0 0 4px rgba(200,76,46,0.08); }
+  .tf-label { font-size:0.75rem; font-weight:800; margin-bottom:8px; color:#8b7a6e; display:block; letter-spacing:.05em; text-transform: uppercase; }
+
+  /* Payment cards */
+  .pay-card {
+    border:1.5px solid #f0e8d8; background:#fff; border-radius:20px;
+    padding:20px; cursor:pointer; transition:all 0.3s ease; position:relative;
+  }
+  .pay-card:hover { border-color:var(--primary); transform: translateY(-2px); }
+  .pay-card.selected { border-color:var(--primary); background:#fffefc; box-shadow:0 10px 30px rgba(200,76,46,0.08); }
+  .pay-card .radio-ring { width:20px;height:20px;border-radius:50%;border:2.5px solid #e8ddd0;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s; }
+  .pay-card.selected .radio-ring { border-color:var(--primary); background:var(--primary); }
+  .pay-card.selected .radio-dot { width:8px;height:8px;background:#fff;border-radius:50%;display:block; }
+
+  /* Summary Glass card */
+  .summary-card { 
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1.5px solid #f0e8d8;
+    border-radius: 28px;
+    box-shadow: 0 15px 45px rgba(0,0,0,0.05);
+  }
+  .divider-dashed { border-top:1.5px dashed #e2d5c3; }
+
+  /* Place order button */
+  .place-btn { 
+    background:var(--primary); color:#fff; border-radius:20px; padding:18px; 
+    font-weight:800; font-size:1rem; width:100%; 
+    transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+    box-shadow: 0 10px 30px rgba(200,76,46,0.25);
+  }
+  .place-btn:hover { background:#a83a1e; transform:translateY(-3px); box-shadow:0 15px 40px rgba(200,76,46,0.35); }
+  .place-btn:active { transform:translateY(0); }
+
+  /* Progress Steps */
+  .prog-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; transition: all 0.3s ease; }
+  .circle-done { background: var(--primary); color: white; }
+  .circle-active { background: var(--primary); color: white; box-shadow: 0 0 0 4px rgba(200,76,46,0.15); }
+  .circle-idle { background: #e8ddd0; color: #b0a090; }
+  .prog-line { height: 2px; flex: 1; background: #e8ddd0; margin-bottom: 24px; }
+  .line-done { background: var(--primary); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
+  .fade-up { animation:fadeUp .5s ease both; }
+
+  /* Success overlay */
+  #successOverlay { display:none;position:fixed;inset:0;background:rgba(44,44,44,.4);backdrop-filter:blur(10px);z-index:1000;align-items:center;justify-content:center; }
+  #successOverlay.show { display:flex; }
+  .success-card { background:#fff; border-radius:32px; padding:48px; text-align:center; max-width:400px; width:90%; position:relative; box-shadow: 0 30px 60px rgba(0,0,0,0.1); }
+
+  .saved-pill { 
+    font-size:0.7rem; background:#fdf0e8; color:var(--primary); 
+    border:1px solid #f8d0c0; border-radius:999px; padding:5px 12px; 
+    cursor:pointer; font-weight:800; text-transform:uppercase; letter-spacing:0.05em;
+    transition: all 0.2s;
+  }
+  .saved-pill:hover { background:var(--primary); color:white; }
+</style>
+{% endblock %}
+
+{% block header %}
+{{ super() }}
+
+<!-- PROGRESS -->
+<div class="max-w-3xl mx-auto px-6 pt-10 pb-6 fade-up">
+  <div class="flex items-center justify-center gap-0">
+    <div class="flex flex-col items-center">
+      <div class="prog-circle circle-done">✓</div>
+      <span class="text-[10px] uppercase tracking-widest mt-2 font-black text-primary">Cart</span>
+    </div>
+    <div class="prog-line line-done mx-2"></div>
+    <div class="flex flex-col items-center">
+      <div class="prog-circle circle-active">2</div>
+      <span class="text-[10px] uppercase tracking-widest mt-2 font-black text-primary">Checkout</span>
+    </div>
+    <div class="prog-line line-idle mx-2"></div>
+    <div class="flex flex-col items-center">
+      <div class="prog-circle circle-idle">3</div>
+      <span class="text-[10px] uppercase tracking-widest mt-2 font-bold text-gray-400">Order</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<main class="max-w-6xl mx-auto px-6 pb-24 pt-4">
+  <h1 class="font-display text-4xl font-black mb-10 fade-up tracking-tight">Final Details</h1>
+
+  <div class="flex flex-col lg:flex-row gap-10 items-start">
+
+    <!-- ─── LEFT: FORMS ─── -->
+    <div class="flex-1 w-full space-y-8">
+
+      <!-- Delivery Address -->
+      <div class="bg-white rounded-3xl p-8 border border-[#f0e8d8] shadow-sm fade-up">
+        <div class="flex items-center justify-between mb-8">
+          <h2 class="font-display font-bold text-xl tracking-tight">📍 Delivery Address</h2>
+          <button type="button" class="saved-pill" onclick="fillSaved()">Use saved address</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div>
+            <label class="tf-label">Full Name</label>
+            <input id="fname" type="text" class="premium-input" placeholder="Adaeze Okonkwo"/>
+          </div>
+          <div>
+            <label class="tf-label">Phone Number</label>
+            <input id="phone" type="tel" class="premium-input" placeholder="+234 ..."/>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="tf-label">Street Address</label>
+            <input id="street" type="text" class="premium-input" placeholder="House number and street name"/>
+          </div>
+          <div>
+            <label class="tf-label">City</label>
+            <input id="city" type="text" class="premium-input" placeholder="e.g. Lagos"/>
+          </div>
+          <div>
+            <label class="tf-label">State</label>
+            <select class="premium-input appearance-none bg-[url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23b0a090\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2.5\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E')] bg-no-repeat bg-[right_16px_center] bg-[length:16px]">
+              <option>Lagos</option><option>Abuja</option><option>Rivers</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="tf-label">Notes for Rider (Optional)</label>
+            <textarea id="instructions" rows="2" class="premium-input resize-none" placeholder="e.g. Ring the bell at gate…"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Method -->
+      <div class="bg-white rounded-3xl p-8 border border-[#f0e8d8] shadow-sm fade-up" style="animation-delay: 0.1s">
+        <h2 class="font-display font-bold text-xl mb-6 tracking-tight">💳 Payment Method</h2>
+        <div class="space-y-4">
+
+          <!-- Card -->
+          <div class="pay-card selected" onclick="selectPay(this,'card')">
+            <div class="flex items-center gap-4">
+              <div class="radio-ring"><span class="radio-dot"></span></div>
+              <div class="flex-1">
+                <p class="font-black text-sm tracking-tight">Credit / Debit Card</p>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Instant confirmation</p>
+              </div>
+              <div class="flex gap-1.5 grayscale opacity-50">
+                <span class="text-[9px] font-black border border-gray-300 px-1 py-0.5 rounded">VISA</span>
+                <span class="text-[9px] font-black border border-gray-300 px-1 py-0.5 rounded">MASTERCARD</span>
+              </div>
+            </div>
+            <div id="cardFields" class="mt-6 space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="sm:col-span-2">
+                    <label class="tf-label">Card Number</label>
+                    <input type="text" class="premium-input" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCard(this)"/>
+                  </div>
+                  <div>
+                    <label class="tf-label">Expiry (MM/YY)</label>
+                    <input type="text" class="premium-input" placeholder="MM / YY" maxlength="7"/>
+                  </div>
+                  <div>
+                    <label class="tf-label">CVV</label>
+                    <input type="password" class="premium-input" placeholder="•••" maxlength="4"/>
+                  </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COD -->
+          <div class="pay-card" onclick="selectPay(this,'cod')">
+            <div class="flex items-center gap-4">
+              <div class="radio-ring"></div>
+              <div class="flex-1">
+                <p class="font-black text-sm tracking-tight">Cash on Delivery</p>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Pay when you receive food</p>
+              </div>
+              <span class="text-xl">💵</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ─── RIGHT: SUMMARY ─── -->
+    <div class="w-full lg:w-96 flex-shrink-0 lg:sticky lg:top-28">
+      <div class="summary-card p-8">
+        <h2 class="font-display text-xl font-black mb-2 tracking-tight">Your Order</h2>
+        <p id="checkout-restaurant" class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-6">Loading Restaurant...</p>
+
+        <div id="checkoutItems" class="space-y-4 mb-6">
+          <div class="h-6 skeleton w-full"></div>
+        </div>
+
+        <div class="divider-dashed mb-6"></div>
+
+        <div class="space-y-3.5 text-sm">
+          <div class="flex justify-between"><span class="text-gray-500 font-medium">Subtotal</span><span id="chkSubtotal" class="font-bold">₦0.00</span></div>
+          <div class="flex justify-between"><span class="text-gray-500 font-medium">Delivery</span><span id="chkDelivery" class="font-bold">₦0.00</span></div>
+          <div class="flex justify-between"><span class="text-gray-500 font-medium">Processing</span><span id="chkTax" class="font-bold">₦0.00</span></div>
+          <div id="chkDiscountRow" class="hidden flex justify-between"><span class="font-bold" style="color:#5a8a0f">Promo Applied</span><span id="chkDiscount" class="font-black" style="color:#5a8a0f">−₦0.00</span></div>
+        </div>
+
+        <div class="divider-dashed my-6"></div>
+
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-black text-gray-700">Total</span>
+          <span id="chkTotal" class="font-display text-3xl font-black text-primary">₦0.00</span>
+        </div>
+        <p class="text-[10px] text-gray-400 font-medium text-right mb-8">All inclusive of VAT</p>
+
+        <button type="button" id="placeOrderBtn" class="place-btn" onclick="placeOrder()">
+          PLACE ORDER
+        </button>
+
+        <p class="text-center text-[10px] text-gray-400 mt-5 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+          <i class="fa-solid fa-lock"></i>
+          Secure Transaction
+        </p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- SUCCESS MODAL -->
+<div id="successOverlay">
+  <div class="success-card">
+    <div class="w-20 h-20 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 bg-green-50 shadow-inner">🎉</div>
+    <h2 class="font-display text-3xl font-black mb-3 tracking-tight">Success!</h2>
+    <p class="text-gray-500 text-sm mb-1">Your order has been confirmed.</p>
+    <p id="successOrderId" class="text-xs font-black text-primary tracking-widest uppercase mb-8">Order #...</p>
+    
+    <div class="bg-[#fdf0e8] rounded-2xl p-5 mb-8 text-center ring-1 ring-primary/10">
+      <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Estimated Arrival</p>
+      <p class="font-display text-2xl font-black text-primary">25–40 Minutes</p>
+    </div>
+    
+    <a href="#" id="trackOrderBtn" class="place-btn block text-center mb-4">TRACK MY ORDER</a>
+    <button onclick="window.location.href='/customer/dashboard'" class="text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">Return to Dashboard</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let cart = JSON.parse(localStorage.getItem('tasteflow_cart')) || [];
+  let checkoutData = JSON.parse(localStorage.getItem('tasteflow_checkout')) || null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+      if (cart.length === 0 || !checkoutData) {
+          showToast('Bag is empty. Redirecting...', 'error');
+          setTimeout(() => window.location.href = '/customer/dashboard', 1200);
+          return;
+      }
+      renderCheckoutSummary();
+  });
+
+  function renderCheckoutSummary() {
+      const container = document.getElementById('checkoutItems');
+      container.innerHTML = '';
+      cart.forEach(item => {
+          container.insertAdjacentHTML('beforeend', `
+          <div class="flex justify-between items-center text-sm">
+            <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded bg-gray-50 flex items-center justify-center text-[10px] font-bold">×${item.quantity}</span>
+                <span class="text-charcoal font-medium">${item.name}</span>
+            </div>
+            <span class="font-bold text-charcoal">₦${(item.price * item.quantity).toLocaleString()}</span>
+          </div>`);
+      });
+
+      document.getElementById('checkout-restaurant').textContent = "TasteFlow Direct Order";
+      document.getElementById('chkSubtotal').textContent = `₦${checkoutData.subtotal.toLocaleString()}`;
+      document.getElementById('chkDelivery').textContent = `₦${checkoutData.delivery.toLocaleString()}`;
+      document.getElementById('chkTax').textContent = `₦${checkoutData.tax.toLocaleString()}`;
+      document.getElementById('chkTotal').textContent = `₦${checkoutData.total.toLocaleString()}`;
+      document.getElementById('placeOrderBtn').textContent = `PLACE ORDER · ₦${checkoutData.total.toLocaleString()}`;
+
+      if (checkoutData.discount > 0) {
+          document.getElementById('chkDiscountRow').classList.remove('hidden');
+          document.getElementById('chkDiscount').textContent = `−₦${checkoutData.discount.toLocaleString()}`;
+      }
+  }
+
+  let selectedPaymentMethod = 'card';
+  function selectPay(el, type) {
+    selectedPaymentMethod = type;
+    document.querySelectorAll('.pay-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('cardFields').style.display = type === 'card' ? 'block' : 'none';
+  }
+
+  function formatCard(input) {
+    let v = input.value.replace(/\D/g,'').substring(0,16);
+    input.value = v.replace(/(.{4})/g,'$1 ').trim();
+  }
+
+  function fillSaved() {
+    document.getElementById('fname').value = 'Adaeze Okonkwo';
+    document.getElementById('phone').value = '+234 803 456 7890';
+    document.getElementById('street').value = '14 Adeola Odeku Street, Victoria Island';
+    document.getElementById('city').value = 'Lagos';
+    showToast('Saved physical address applied');
+  }
+
+  async function placeOrder() {
+      const btn = document.getElementById('placeOrderBtn');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> VERIFYING...';
+
+      const street = document.getElementById('street').value.trim();
+      const city = document.getElementById('city').value.trim();
+      
+      if (!street || !city) {
+          showToast('Please provide your delivery destination');
+          btn.disabled = false; btn.innerHTML = originalText;
+          return;
+      }
+
+      const payload = {
+          restaurant_id: cart[0].restaurant_id,
+          total_amount: checkoutData.total,
+          address: `${street}, ${city}`,
+          payment_method: selectedPaymentMethod,
+          items: cart.map(item => ({
+              dish_id: item.id,
+              quantity: item.quantity,
+              price_at_time: item.price
+          }))
+      };
+
+      try {
+          const response = await fetch('/customer/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          });
+          const data = await response.json();
+
+          if (response.ok) {
+              localStorage.removeItem('tasteflow_cart');
+              localStorage.removeItem('tasteflow_checkout');
+              const orderId = data.order_ids ? data.order_ids[0] : null;
+              if (orderId) {
+                  document.getElementById('successOrderId').textContent = `Order #TF-${orderId}`;
+                  document.getElementById('trackOrderBtn').href = `/customer/tracking/${orderId}`;
+              }
+              document.getElementById('successOverlay').classList.add('show');
+          } else {
+              showToast(data.error || 'Connection failed', 'error');
+              btn.disabled = false; btn.innerHTML = originalText;
+          }
+      } catch (error) {
+          showToast('Network error. Please try again.', 'error');
+          btn.disabled = false; btn.innerHTML = originalText;
+      }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,344 @@
+{% extends 'customer/base.html' %}
+
+{% block title %}TasteFlow – Track Order{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* MAP placeholder premium styling */
+  .map-area {
+    background: linear-gradient(160deg,#d4ecc0 0%,#b8dda0 30%,#c8d8a8 60%,#d0e8b0 100%);
+    position:relative; overflow:hidden;
+    border-bottom: 2px solid #e8ddd0;
+  }
+  .map-road-h, .map-road-v { background:rgba(255,255,255,.6); border-radius:4px; }
+  .map-block { background:rgba(180,210,150,.8); border-radius:12px; }
+
+  /* Pulse dot for driver */
+  @keyframes pulse-ring {
+    0%{transform:scale(.8);opacity:1}
+    100%{transform:scale(2.5);opacity:0}
+  }
+  .pulse-ring { animation:pulse-ring 2s ease-out infinite; }
+
+  /* Glassmorphism */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+  }
+
+  /* Timeline premium style */
+  .step-node { 
+    width:36px; height:36px; border-radius:50%; 
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; 
+    position:relative; z-index:1; font-weight: 700; font-size: 0.8rem;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .step-done { background:var(--green); color:#fff; transform: scale(1.1); }
+  .step-active { 
+    background:var(--primary); color:#fff; 
+    box-shadow: 0 0 0 6px rgba(200,76,46,.15);
+    transform: scale(1.1);
+  }
+  .step-idle { background:#e8ddd0; color:#b0a090; }
+  .step-line-v { width:2.5px; background:#e8ddd0; flex:1; min-height:32px; margin-left:17px; border-radius: 99px; }
+  .step-line-done { background:var(--green); }
+
+  /* Premium Cards */
+  .tf-card { 
+    background:#fff; 
+    border: 1.5px solid #f0e8d8; 
+    border-radius:24px;
+    transition: all 0.3s ease;
+  }
+  .tf-card:hover { border-color: #e2d5c3; }
+
+  /* Driver dot on map */
+  @keyframes move-driver {
+    0%{left:30%;top:60%}
+    25%{left:42%;top:52%}
+    50%{left:55%;top:45%}
+    75%{left:64%;top:38%}
+    100%{left:70%;top:32%}
+  }
+  .driver-marker { position:absolute; animation:move-driver 15s ease-in-out infinite; z-index: 20; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)} }
+  .fade-up { animation:fadeUp .5s ease both; }
+
+  /* Shimmer Loading */
+  @keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
+  .skeleton {
+    background: #f6f7f8;
+    background-image: linear-gradient(90deg, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+    background-repeat: no-repeat;
+    background-size: 800px 104px;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 12px;
+  }
+
+  .outline-btn { 
+    border:1.5px solid var(--primary); color:var(--primary); 
+    background:transparent; border-radius:14px; 
+    padding:12px 24px; font-weight:700; font-size:0.875rem; 
+    transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+  }
+  .outline-btn:hover { background:var(--primary); color:#fff; box-shadow: 0 8px 20px rgba(200,76,46,0.25); }
+
+  .prog-track { background:#e8ddd0; border-radius:99px; height:8px; overflow:hidden; }
+  .prog-fill { 
+    background: linear-gradient(90deg, var(--primary), #f07050); 
+    height:100%; border-radius:99px; transition:width 0.8s cubic-bezier(0.65, 0, 0.35, 1); 
+  }
+</style>
+{% endblock %}
+
+{% block header %}
+{{ super() }}
+
+<!-- PREMIUM MAP SECTION -->
+<div class="map-area h-64 md:h-80 relative">
+  <div class="map-road-h" style="top:40%;left:0;right:0;height:10px"></div>
+  <div class="map-road-v" style="left:30%;top:0;bottom:0;width:10px"></div>
+  <div class="map-block" style="top:15%;left:10%;width:15%;height:20%"></div>
+  <div class="map-block" style="top:55%;left:10%;width:12%;height:25%"></div>
+  <div class="map-block" style="top:15%;left:40%;width:20%;height:15%"></div>
+
+  <!-- Destination pin -->
+  <div class="absolute" style="right:20%;top:25%;transform:translateX(50%)">
+    <div class="relative flex flex-col items-center">
+      <div class="w-11 h-11 rounded-full border-4 border-white shadow-xl flex items-center justify-center text-xl z-10" style="background:var(--primary)">🏠</div>
+      <div class="glass-card px-3 py-1 rounded-full text-[10px] font-bold mt-2 tracking-wider uppercase">Your Home</div>
+    </div>
+  </div>
+
+  <!-- Driver marker -->
+  <div class="driver-marker">
+    <div class="relative flex items-center justify-center">
+      <div class="pulse-ring absolute w-12 h-12 rounded-full" style="background:var(--primary)"></div>
+      <div class="w-10 h-10 rounded-full border-3 border-white shadow-2xl flex items-center justify-center z-10 relative" style="background:var(--primary)">
+        <span class="text-lg">🛵</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ETA floating badge -->
+  <div class="absolute top-6 left-1/2 -translate-x-1/2">
+    <div class="glass-card px-5 py-2.5 rounded-full flex items-center gap-3 text-sm font-bold">
+      <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+      <span class="text-charcoal uppercase tracking-tighter">On the way</span>
+      <span class="px-3 py-1 rounded-full text-white text-xs font-black shadow-sm" style="background:var(--primary)">~<span id="etaMin">18</span> MIN</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<main class="max-w-5xl mx-auto px-6 pb-24 pt-8">
+  <div class="flex flex-col lg:flex-row gap-8 items-start">
+
+    <!-- ─── LEFT: TRACKING JOURNEY ─── -->
+    <div class="flex-1 w-full space-y-6">
+
+      <!-- Order Status Header -->
+      <div class="fade-up">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 id="track-order-id" class="font-display text-2xl font-bold tracking-tight">Order #...</h2>
+            <p id="track-order-meta" class="text-sm text-gray-500 mt-1 flex items-center gap-2">
+                <span class="skeleton h-4 w-32"></span>
+            </p>
+          </div>
+          <div class="text-right">
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Live Status</p>
+            <span id="track-step-text" class="px-3 py-1 bg-[#fdf0e8] text-primary rounded-lg font-black text-xs uppercase tracking-tighter">Loading...</span>
+          </div>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill" style="width:15%" id="progBar"></div>
+        </div>
+      </div>
+
+      <!-- Timeline of Joy -->
+      <div class="tf-card p-8 fade-up" style="animation-delay: 0.1s">
+        <h3 class="font-display font-bold text-lg mb-8">Delivery Progress</h3>
+
+        <div class="flex">
+          <div class="flex flex-col items-center mr-6" style="width:40px">
+            <div id="step-node-1" class="step-node step-idle">1</div>
+            <div class="step-line-v" id="step-line-1"></div>
+            <div id="step-node-2" class="step-node step-idle">2</div>
+            <div class="step-line-v" id="step-line-2"></div>
+            <div id="step-node-3" class="step-node step-idle">3</div>
+            <div class="step-line-v" id="step-line-3"></div>
+            <div id="step-node-4" class="step-node step-idle">4</div>
+          </div>
+
+          <div class="flex-1 space-y-8 pt-1">
+            <div id="step-text-1" class="transition-all duration-500">
+              <p class="font-bold text-sm text-gray-400">Order Confirmed</p>
+              <p class="text-xs text-gray-500 mt-1 leading-relaxed">Your order was received and the kitchen has begun magic.</p>
+            </div>
+            <div id="step-text-2" class="transition-all duration-500">
+              <p class="font-bold text-sm text-gray-400">Preparing Your Order</p>
+              <p class="text-xs text-gray-500 mt-1 leading-relaxed">Our chefs are busy preparing your fresh ingredients.</p>
+            </div>
+            <div id="step-text-3" class="transition-all duration-500">
+              <p class="font-bold text-sm text-gray-400">Out for Delivery</p>
+              <p class="text-xs text-gray-500 mt-1 leading-relaxed">A rider has picked up your order and is heading your way.</p>
+            </div>
+            <div id="step-text-4" class="transition-all duration-500">
+              <p class="font-bold text-sm text-gray-400">Enjoy Your Meal!</p>
+              <p class="text-xs text-gray-500 mt-1 leading-relaxed">Hand-delivered with care to your doorstep.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items Summary -->
+      <div class="tf-card p-6 fade-up" style="animation-delay: 0.2s">
+        <h3 class="font-display font-bold text-lg mb-4">Order Summary</h3>
+        <div id="track-items-container" class="space-y-3">
+            <div class="h-10 skeleton w-full"></div>
+            <div class="h-10 skeleton w-full"></div>
+        </div>
+        <div class="mt-6 pt-5 flex justify-between items-center border-t border-dashed border-gray-200">
+          <span class="text-sm font-bold text-gray-500">Amount Paid</span>
+          <span id="track-total" class="font-display text-2xl font-bold text-primary">₦0.00</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ─── RIGHT: DRIVER + ETA ─── -->
+    <div class="w-full lg:w-80 flex-shrink-0 space-y-6">
+      
+      <!-- Premium Countdown -->
+      <div class="tf-card p-6 border-b-4 border-b-primary fade-up">
+        <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-4">Estimated Arrival</p>
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <span class="font-display text-5xl font-black text-primary" id="countMin">18</span>
+          <span class="colon font-display text-4xl font-bold text-primary">:</span>
+          <span class="font-display text-5xl font-black text-primary" id="countSec">00</span>
+        </div>
+        <div class="text-center">
+            <span class="text-xs font-bold text-gray-500">MINUTES REMAINING</span>
+        </div>
+      </div>
+
+      <!-- Rider Info -->
+      <div class="tf-card p-6 fade-up" style="animation-delay: 0.1s">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="relative">
+            <img src="https://i.pravatar.cc/100?img=33" class="w-16 h-16 rounded-2xl object-cover border-2 border-primary/20 shadow-md"/>
+            <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full flex items-center justify-center text-[8px] text-white">⚡</div>
+          </div>
+          <div>
+            <p class="font-black text-charcoal">Emeka Okafor</p>
+            <p class="text-xs text-gray-500 font-medium">🛵 Gold Wings · LAG 4821</p>
+            <div class="flex items-center gap-1 mt-1 text-[10px] font-bold text-yellow-600">
+                <i class="fa-solid fa-star"></i> 4.9 <span class="text-gray-400 font-medium ml-1">(1k+ trips)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let totalSec = 18 * 60;
+  let timerInterval;
+
+  document.addEventListener('DOMContentLoaded', () => {
+      const pathParts = window.location.pathname.split('/');
+      const orderId = pathParts[pathParts.length - 1];
+      if (orderId && !isNaN(orderId)) fetchOrderDetails(orderId);
+  });
+
+  async function fetchOrderDetails(orderId) {
+      try {
+          const response = await fetch(`/customer/api/order/${orderId}`);
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error);
+          const order = data.order;
+          
+          document.getElementById('track-order-id').textContent = `Order #TF-${order.id}`;
+          const dateStr = new Date(order.order_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+          document.getElementById('track-order-meta').innerHTML = `<i class="fa-solid fa-utensils mr-1"></i> ${order.restaurant_name} · Placed at ${dateStr}`;
+          
+          const itemsContainer = document.getElementById('track-items-container');
+          itemsContainer.innerHTML = '';
+          order.items.forEach(item => {
+              itemsContainer.insertAdjacentHTML('beforeend', `
+                <div class="flex justify-between items-center text-sm font-medium">
+                  <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded bg-gray-50 flex items-center justify-center text-[10px] text-gray-400">×${item.quantity}</span>
+                    <span class="text-charcoal">${item.name}</span>
+                  </div>
+                  <span class="text-gray-400">₦${parseFloat(item.price * item.quantity).toLocaleString()}</span>
+                </div>
+              `);
+          });
+          document.getElementById('track-total').textContent = `₦${parseFloat(order.total_amount).toLocaleString()}`;
+          updateTimeline(order.status.toLowerCase());
+      } catch (e) { 
+          console.error(e); 
+          showToast('Failed to sync order status', 'error');
+      }
+  }
+
+  function updateTimeline(status) {
+      const progBar = document.getElementById('progBar');
+      const stepText = document.getElementById('track-step-text');
+      
+      const statuses = ['pending', 'preparing', 'out for delivery', 'delivered'];
+      const currentIndex = statuses.indexOf(status);
+
+      for(let i=1; i<=4; i++) {
+          const node = document.getElementById(`step-node-${i}`);
+          const line = document.getElementById(`step-line-${i}`);
+          const textContainer = document.getElementById(`step-text-${i}`);
+          const textParag = textContainer.querySelector('p:first-child');
+          
+          if(i-1 < currentIndex) {
+              node.className = 'step-node step-done'; node.innerHTML = '<i class="fa-solid fa-check"></i>';
+              if(line) line.className = 'step-line-v step-line-done';
+              textParag.className = 'font-bold text-sm text-green-600';
+              textContainer.style.opacity = '0.6';
+          } else if(i-1 === currentIndex) {
+              node.className = 'step-node step-active'; node.innerHTML = i;
+              if(line) line.className = 'step-line-v';
+              textParag.className = 'font-black text-sm text-primary';
+              textContainer.style.opacity = '1';
+              textContainer.style.transform = 'translateX(5px)';
+          } else {
+              node.className = 'step-node step-idle'; node.innerHTML = i;
+              if(line) line.className = 'step-line-v';
+              textParag.className = 'font-bold text-sm text-gray-400';
+              textContainer.style.opacity = '0.4';
+          }
+      }
+
+      progBar.style.width = ((currentIndex + 1) / 4 * 100) + '%';
+      stepText.textContent = status;
+      totalSec = (4 - currentIndex) * 10 * 60;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(tick, 1000);
+      tick();
+  }
+
+  function tick() {
+    if (totalSec <= 0) return;
+    totalSec--;
+    document.getElementById('countMin').textContent = String(Math.floor(totalSec / 60)).padStart(2,'0');
+    document.getElementById('countSec').textContent = String(totalSec % 60).padStart(2,'0');
+    if(document.getElementById('etaMin')) document.getElementById('etaMin').textContent = Math.floor(totalSec / 60);
+  }
+</script>
+{% endblock %}

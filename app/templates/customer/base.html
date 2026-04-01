@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{% block title %}TasteFlow{% endblock %}</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#C84C2E',
+                        primaryHover: '#A83B20',
+                        charcoal: '#2C2C2C',
+                        cream: '#FDF4E3',
+                        light: '#F9FAFB',
+                        success: '#22c55e',
+                        warning: '#f97316',
+                        danger: '#ef4444'
+                    },
+                    fontFamily: {
+                        display: ['Playfair Display', 'serif'],
+                        sans: ['DM Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root { 
+            --primary: #C84C2E; 
+            --cream: #FDF4E3; 
+            --charcoal: #2C2C2C; 
+            --green: #87B42D; 
+            --orange: #f97316;
+        }
+        body { 
+            font-family: "DM Sans", sans-serif; 
+            background: var(--cream); 
+            color: var(--charcoal); 
+            -webkit-font-smoothing: antialiased; 
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .font-display { font-family: "Playfair Display", serif; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: #a83a1e; }
+        
+        /* Custom Scrollbar for a polished look */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2d5c3; border-radius: 4px; }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col">
+
+    {% block header %}
+        {% include 'customer/partials/navbar.html' %}
+    {% endblock %}
+
+    <main class="flex-grow">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="bg-charcoal text-white pt-14 pb-8 mt-20 border-t border-charcoal/10 relative">
+        <div class="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal to-transparent -z-10"></div>
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-10 mb-12">
+                <div class="md:col-span-2">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white text-sm font-black shadow-lg">TF</div>
+                        <div>
+                            <p class="font-display font-bold text-2xl">TasteFlow</p>
+                            <p class="text-gray-400 text-xs uppercase tracking-widest">Local Food Discovery</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-6">
+                        From first bite to final sip, we make your food moments effortless and delightful.
+                    </p>
+
+                    <form id="footer-newsletter-form" onsubmit="submitFooterNewsletter(event)" class="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <input type="email" id="footer-newsletter-email" placeholder="Your email" required class="w-full sm:flex-1 px-4 py-3 rounded-xl border border-gray-700 bg-charcoal/80 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/40" />
+                        <button type="submit" class="btn-primary px-5 py-3 rounded-xl font-semibold text-sm hover:bg-primaryHover transition">Subscribe</button>
+                    </form>
+                    <p id="footer-newsletter-msg" class="mt-2 text-xs"></p>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-sm uppercase tracking-widest mb-4">Quick Links</h4>
+                    <ul class="space-y-3 text-sm text-gray-300">
+                        <li><a href="/customer/dashboard" class="hover:text-primary transition-colors">Browse Restaurants</a></li>
+                        <li><a href="/orders" class="hover:text-primary transition-colors">My Orders</a></li>
+                        <li><a href="/customer/profile" class="hover:text-primary transition-colors">Account Settings</a></li>
+                        <li><a href="/customer/checkout" class="hover:text-primary transition-colors">Checkout</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-sm uppercase tracking-widest mb-4">Support</h4>
+                    <ul class="space-y-3 text-sm text-gray-300">
+                        <li><a href="/customer/dashboard" class="hover:text-primary transition-colors">Feedback</a></li>
+                        <li><a href="/customer/dashboard" class="hover:text-primary transition-colors">Help Center</a></li>
+                        <li><a href="/customer/dashboard" class="hover:text-primary transition-colors">Contact Us</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-3 text-gray-500 text-xs">
+                <p>© 2026 TasteFlow. All rights reserved.</p>
+                <div class="flex items-center gap-4">
+                    <a href="#" class="hover:text-primary"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="hover:text-primary"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="hover:text-primary"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="hover:text-primary"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    {% include 'customer/partials/toast.html' %}
+
+    {% block scripts %}
+    <script>
+        async function submitFooterNewsletter(event) {
+            event.preventDefault();
+            const emailEl = document.getElementById('footer-newsletter-email');
+            const statusEl = document.getElementById('footer-newsletter-msg');
+            const email = (emailEl.value || '').trim();
+
+            if (!email || email.indexOf('@') < 0 || email.indexOf('.') < 0) {
+                statusEl.textContent = 'Please enter a valid email address.';
+                statusEl.className = 'text-danger';
+                return;
+            }
+
+            try {
+                const res = await fetch('/customer/api/newsletter', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email})
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    statusEl.textContent = 'Thanks for subscribing!';
+                    statusEl.className = 'text-green-400';
+                    emailEl.value = '';
+                } else {
+                    statusEl.textContent = data.error || 'Subscription failed. Please try again.';
+                    statusEl.className = 'text-danger';
+                }
+            } catch (err) {
+                statusEl.textContent = 'Network error. Please try again later.';
+                statusEl.className = 'text-danger';
+            }
+        }
+    </script>
+    {% endblock %}
+</body>
+</html>

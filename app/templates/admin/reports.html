@@ -1,0 +1,145 @@
+{% extends 'admin/base.html' %}
+{% set active_page = 'reports' %}
+
+{% block title %}TasteFlow – Reports & Analytics{% endblock %}
+{% block header_title %}Reports & Analytics{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+        <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Total Revenue</p>
+        <h3 id="report-revenue" class="text-2xl font-bold text-charcoal dark:text-white">₦0</h3>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+        <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Active Orders</p>
+        <h3 id="report-orders" class="text-2xl font-bold text-charcoal dark:text-white">0</h3>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+        <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">New Customers</p>
+        <h3 id="report-customers" class="text-2xl font-bold text-charcoal dark:text-white">0</h3>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+        <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Total Restaurants</p>
+        <h3 id="report-restaurants" class="text-2xl font-bold text-charcoal dark:text-white">0</h3>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-charcoal dark:text-white mb-4">7-Day Revenue Trend</h3>
+        <div class="h-72">
+            <canvas id="revenueChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-charcoal dark:text-white mb-4">Top Performing Restaurants</h3>
+        <div class="h-72">
+            <canvas id="restaurantsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+    <h3 class="text-lg font-semibold text-charcoal dark:text-white mb-4">Detailed Reports</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button onclick="window.location.href='/admin/export/orders'" class="w-full text-left p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary transition-colors group">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-blue-50 dark:bg-gray-700 rounded-lg text-blue-600 dark:text-blue-400 group-hover:bg-primary group-hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                </div>
+                <div>
+                    <h4 class="font-medium text-charcoal dark:text-white">Order History Report</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Complete transaction history in CSV</p>
+                </div>
+            </div>
+        </button>
+
+        <button onclick="window.location.href='/admin/export/customers'" class="w-full text-left p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-primary dark:hover:border-primary transition-colors group">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-green-50 dark:bg-gray-700 rounded-lg text-green-600 dark:text-green-400 group-hover:bg-primary group-hover:text-white transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                </div>
+                <div>
+                    <h4 class="font-medium text-charcoal dark:text-white">Customer Analytics</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Customer acquisition and retention metrics</p>
+                </div>
+            </div>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const res = await fetch('/admin/api/dashboard');
+            const data = await res.json();
+            
+            if (res.ok) {
+                // Populate Top Metric Cards
+                const stats = data.stats;
+                if(document.getElementById('report-revenue')) document.getElementById('report-revenue').textContent = `₦${stats.total_revenue.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+                if(document.getElementById('report-orders')) document.getElementById('report-orders').textContent = stats.pending_orders;
+                if(document.getElementById('report-customers')) document.getElementById('report-customers').textContent = stats.users_count;
+                if(document.getElementById('report-restaurants')) document.getElementById('report-restaurants').textContent = stats.restaurants_count;
+
+                // Setup Chart Styles based on theme
+                const isDark = document.documentElement.classList.contains('dark');
+                const textColor = isDark ? '#9ca3af' : '#4b5563';
+                const gridColor = isDark ? '#374151' : '#f3f4f6';
+
+                // Render Revenue Trend Chart (Line Chart)
+                const revCtx = document.getElementById('revenueChart');
+                if (revCtx && data.charts && data.charts.weekly_revenue) {
+                    window.revenueChart = new Chart(revCtx, {
+                        type: 'line',
+                        data: {
+                            labels: data.charts.weekly_revenue.labels,
+                            datasets: [{
+                                label: 'Daily Revenue (₦)',
+                                data: data.charts.weekly_revenue.data,
+                                borderColor: '#C84C2E',
+                                backgroundColor: 'rgba(200, 76, 46, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } }
+                        }
+                    });
+                }
+
+                // Render Top Restaurants Chart (Bar Chart)
+                const restCtx = document.getElementById('restaurantsChart');
+                if (restCtx && data.charts && data.charts.top_restaurants) {
+                    window.restChart = new Chart(restCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.charts.top_restaurants.labels,
+                            datasets: [{
+                                label: 'Total Earned (₦)',
+                                data: data.charts.top_restaurants.data,
+                                backgroundColor: '#87B42D',
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } }
+                        }
+                    });
+                }
+            } else {
+                showToast('Failed to load analytical data.', 'error');
+            }
+        } catch (err) {
+            showToast('Network error while loading reports.', 'error');
+        }
+    });
+</script>
+{% endblock %}

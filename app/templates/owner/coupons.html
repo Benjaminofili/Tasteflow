@@ -1,0 +1,291 @@
+{% extends 'owner/base.html' %}
+
+{% block title %}Coupons & Promotions | TasteFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+    .coupon-card {
+        background: white;
+        border: 1.5px solid #f0e8d8;
+        border-radius: 28px;
+        padding: 32px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .coupon-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--primary);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+    }
+    
+    .coupon-code-pill {
+        background: #fdf0e8;
+        color: var(--primary);
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 8px 16px;
+        border-radius: 12px;
+        border: 1.5px dashed var(--primary);
+        display: inline-block;
+    }
+
+    .form-panel {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1.5px solid #f0e8d8;
+        border-radius: 32px;
+        padding: 40px;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.05);
+    }
+
+    .input-label {
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--charcoal);
+        margin-bottom: 8px;
+        display: block;
+        opacity: 0.6;
+    }
+    .custom-input {
+        width: 100%;
+        background: #f9f9f9;
+        border: 1.5px solid transparent;
+        border-radius: 16px;
+        padding: 14px 20px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--charcoal);
+        transition: all 0.3s ease;
+    }
+    .custom-input:focus {
+        border-color: var(--primary);
+        background: white;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(200,76,46,0.05);
+    }
+
+    .search-input {
+        background: white;
+        border: 1.5px solid #f0e8d8;
+        border-radius: 100px;
+        padding: 12px 24px 12px 48px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        width: 100%;
+        max-width: 320px;
+        transition: all 0.3s ease;
+    }
+    .search-input:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 10px 25px rgba(200,76,46,0.08);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 lg:px-10 py-10">
+    
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 fade-up">
+        <div>
+            <p class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Growth & Loyalty</p>
+            <h1 class="font-display text-4xl font-black tracking-tight text-charcoal">Promotion Codes</h1>
+            <p class="text-gray-400 text-sm mt-2 font-medium">Design incentives to drive demand and reward loyalty.</p>
+        </div>
+        
+        <div class="flex items-center gap-4">
+             <div class="relative hidden sm:block">
+                <i class="fa-solid fa-magnifying-glass absolute left-6 top-1/2 -translate-y-1/2 text-primary opacity-60"></i>
+                <input type="text" oninput="handleSearch(this.value)" placeholder="Locate Code..." class="search-input">
+             </div>
+             <button onclick="toggleForm()" class="bg-charcoal text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-xl active:translate-y-1">
+                <i class="fa-solid fa-plus-circle mr-2"></i> Design Offer
+             </button>
+        </div>
+    </div>
+
+    <!-- Add Coupon Form Panel (Hidden by default) -->
+    <div id="add-coupon-form" class="hidden mb-12 fade-up">
+        <div class="form-panel relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-amber-500"></div>
+            <div class="flex items-center justify-between mb-10">
+                <h2 class="font-display text-2xl font-black text-charcoal tracking-tight">Design New Offer</h2>
+                <button onclick="toggleForm()" class="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-all"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form onsubmit="handleAddCoupon(event)" class="space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div>
+                        <label class="input-label">Alpha-Numeric Code</label>
+                        <input type="text" id="coupon-code" placeholder="e.g. SAVE25" class="custom-input uppercase" style="text-transform: uppercase;" required>
+                    </div>
+                    <div>
+                        <label class="input-label">Benefit Model</label>
+                        <select id="discount-type" class="custom-input appearance-none pr-12 cursor-pointer">
+                            <option value="percent">Percentage (%)</option>
+                            <option value="fixed">Fixed (₦)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="input-label">Benefit Magnitude</label>
+                        <input type="number" id="discount-value" step="0.01" min="0" placeholder="0.00" class="custom-input" required>
+                    </div>
+                    <div>
+                        <label class="input-label">Expiry (Optional)</label>
+                        <input type="datetime-local" id="valid-until" class="custom-input font-bold opacity-60">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-6 border-t border-[#f0e8d8]">
+                    <div class="flex items-center gap-3">
+                         <input type="checkbox" id="is-active" checked class="w-5 h-5 accent-primary rounded-lg">
+                         <label for="is-active" class="text-[10px] font-black uppercase tracking-widest text-charcoal select-none cursor-pointer">Activate code immediately</label>
+                    </div>
+                    <button type="submit" id="submit-btn" class="bg-primary text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-primaryHover transition-all shadow-xl active:translate-y-1">
+                        Commit to Database
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Coupons Feed -->
+    <div id="coupons-feed" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-up" style="animation-delay: 0.1s">
+        <!-- LOADING SKELETONS -->
+        <div class="coupon-card h-48 bg-gray-50 animate-pulse rounded-[28px]"></div>
+        <div class="coupon-card h-48 bg-gray-50 animate-pulse rounded-[28px]"></div>
+        <div class="coupon-card h-48 bg-gray-50 animate-pulse rounded-[28px]"></div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => fetchCoupons());
+
+    function toggleForm() {
+        const form = document.getElementById('add-coupon-form');
+        form.classList.toggle('hidden');
+        if(!form.classList.contains('hidden')) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    let searchTimeout;
+    function handleSearch(val) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            fetchCoupons(val);
+        }, 400);
+    }
+
+    async function fetchCoupons(search = '') {
+        if (typeof search !== 'string') search = '';
+        const feed = document.getElementById('coupons-feed');
+        try {
+            const url = search ? `/owner/api/coupons?search=${encodeURIComponent(search)}` : '/owner/api/coupons';
+            const response = await fetch(url);
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+
+            feed.innerHTML = '';
+            
+            if (data.coupons.length === 0) {
+                feed.innerHTML = `
+                    <div class="col-span-full py-20 text-center bg-white rounded-[40px] border border-dashed border-[#f0e8d8]">
+                        <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fa-solid fa-ticket-simple text-gray-300 text-3xl"></i>
+                        </div>
+                        <h3 class="font-display text-2xl font-black text-charcoal">Inventory Depleted</h3>
+                        <p class="text-gray-400 text-sm mt-2 font-medium">No promo codes synchronized. Refresh or design an offer.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            data.coupons.forEach(coupon => {
+                const isExpired = coupon.valid_until && new Date(coupon.valid_until) < new Date();
+                const isActive = coupon.is_active && !isExpired;
+                const discountText = coupon.discount_type === 'percent' ? `${coupon.discount_value}%` : `₦${parseFloat(coupon.discount_value).toLocaleString()}`;
+                const expiryText = coupon.valid_until ? new Date(coupon.valid_until).toLocaleDateString() : 'PERPETUAL';
+
+                const card = `
+                    <div class="coupon-card group flex flex-col justify-between">
+                        <div class="flex items-start justify-between mb-8">
+                            <div>
+                                <h3 class="font-display font-black text-4xl text-charcoal tracking-tighter">${discountText}<span class="text-xs uppercase text-gray-400 tracking-widest ml-2">Reduction</span></h3>
+                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-2">Valid Until: ${expiryText}</p>
+                            </div>
+                            <span class="px-3 py-1 text-[8px] font-black uppercase tracking-tighter rounded-full border shadow-sm ${isActive ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-gray-50 text-gray-400 border-gray-100'}">
+                                ${isActive ? 'OPERATIONAL' : 'OFFLINE'}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="coupon-code-pill font-display">${coupon.code}</div>
+                            <button onclick="deleteCoupon(${coupon.id})" class="w-10 h-10 rounded-xl bg-gray-50 text-gray-400 hover:bg-rose-50 hover:text-rose-500 transition-all flex items-center justify-center border border-transparent hover:border-rose-100">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                feed.insertAdjacentHTML('beforeend', card);
+            });
+        } catch (error) {
+            feed.innerHTML = `<p class="col-span-full py-10 text-center text-red-500 font-black uppercase tracking-widest text-[10px]">Synchronization Error</p>`;
+        }
+    }
+
+    async function handleAddCoupon(e) {
+        e.preventDefault();
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+        btn.innerHTML = 'COMMITTING... <i class="fa-solid fa-spinner fa-spin ml-2"></i>';
+
+        const payload = {
+            code: document.getElementById('coupon-code').value.trim().toUpperCase(),
+            discount_type: document.getElementById('discount-type').value,
+            discount_value: parseFloat(document.getElementById('discount-value').value),
+            valid_until: document.getElementById('valid-until').value || null,
+            is_active: document.getElementById('is-active').checked ? 'true' : 'false'
+        };
+
+        try {
+            const response = await fetch('/owner/api/coupons/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (response.ok) {
+                showToast('Offer design committed to network', 'success');
+                e.target.reset();
+                toggleForm();
+                fetchCoupons();
+            } else showToast(data.message || 'Commit failed', 'error');
+        } catch (error) { showToast('Sync error', 'error'); }
+        finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Commit to Database';
+        }
+    }
+
+    async function deleteCoupon(id) {
+        if(!confirm("Purge this offer design from the network?")) return;
+        try {
+            const response = await fetch(`/owner/api/coupons/delete/${id}`, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (response.ok) {
+                showToast('Offer design purged', 'success');
+                fetchCoupons();
+            } else showToast('Purge operation failed', 'error');
+        } catch (error) { showToast('Sync error', 'error'); }
+    }
+</script>
+{% endblock %}

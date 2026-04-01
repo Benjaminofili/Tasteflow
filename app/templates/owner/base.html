@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TasteFlow | Owner Portfolio{% endblock %}</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#C84C2E',
+                        primaryHover: '#A83B20',
+                        charcoal: '#2C2C2C',
+                        cream: '#FDF4E3',
+                        light: '#F9FAFB',
+                        success: '#22c55e',
+                        warning: '#f97316',
+                        danger: '#ef4444'
+                    },
+                    fontFamily: {
+                        display: ['Playfair Display', 'serif'],
+                        sans: ['DM Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root { 
+            --primary: #C84C2E; 
+            --cream: #FDF4E3; 
+            --charcoal: #2C2C2C; 
+        }
+        body { 
+            background: #F9FAFB; 
+            color: var(--charcoal); 
+            font-family: 'DM Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .font-display { font-family: 'Playfair Display', serif; }
+        
+        /* Premium Sidebar Glassmorphism */
+        .sidebar-glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-right: 1.5px solid #f0e8d8;
+        }
+
+        .nav-link {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .nav-link.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 8px 20px rgba(200,76,46,0.2);
+        }
+        .nav-link:not(.active):hover {
+            background: #fdf0e8;
+            color: var(--primary);
+            padding-left: 20px;
+        }
+
+        /* Hide scrollbar */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        .fade-up { animation: fadeUp 0.6s ease both; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Mobile Header -->
+    <div class="lg:hidden fixed top-0 w-full h-16 bg-white/90 backdrop-blur-md border-b border-[#f0e8d8] z-50 flex items-center justify-between px-6">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white text-xs font-black">TF</div>
+            <span class="font-display font-black text-xl tracking-tight">TasteFlow</span>
+        </div>
+        <button id="mobile-menu-btn" class="w-10 h-10 flex items-center justify-center text-charcoal hover:text-primary transition-colors">
+            <i class="fa-solid fa-bars-staggered text-xl"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-charcoal/40 z-40 hidden lg:hidden transition-opacity"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 sidebar-glass transform -translate-x-full lg:translate-x-0 transition-all duration-500 ease-in-out flex flex-col pt-8 pb-6 shadow-2xl lg:shadow-none">
+        <div class="px-8 mb-10">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white text-sm font-black shadow-lg">TF</div>
+                <div class="flex flex-col">
+                    <span class="font-display font-black text-2xl tracking-tighter leading-tight text-charcoal">TasteFlow</span>
+                    <span class="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Partner Hub</span>
+                </div>
+            </div>
+            <button id="close-sidebar" class="absolute top-8 right-6 lg:hidden text-gray-400 hover:text-charcoal">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto px-4 space-y-2 hide-scrollbar">
+            {% set items = [
+                ('Dashboard', 'dashboard', 'fa-solid fa-house-chimney'),
+                ('My Menu', 'dishes', 'fa-solid fa-utensils'),
+                ('Live Orders', 'orders', 'fa-solid fa-receipt'),
+                ('Upload Menu', 'media', 'fa-solid fa-cloud-arrow-up'),
+                ('Coupons', 'coupons', 'fa-solid fa-ticket-simple'),
+                ('Profile', 'profile', 'fa-solid fa-user-gear')
+            ] %}
+
+            {% for label, key, icon in items %}
+            <a href="/owner/{{ key }}" 
+               class="nav-link flex items-center gap-4 px-5 py-3.5 {{ 'active' if request.path == '/owner/' ~ key else 'text-gray-400' }}">
+                <i class="{{ icon }} text-lg"></i>
+                <span>{{ label }}</span>
+            </a>
+            {% endfor %}
+        </nav>
+
+        <div class="px-6 mt-6">
+            <a href="javascript:void(0)" onclick="handleLogout(event)" 
+               class="flex items-center gap-4 px-6 py-4 rounded-2xl bg-gray-50 text-red-500 font-bold hover:bg-red-50 transition-all group">
+                <i class="fa-solid fa-arrow-right-from-bracket group-hover:translate-x-1 transition-transform"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 lg:ml-72 mt-16 lg:mt-0 h-screen overflow-y-auto hide-scrollbar">
+        <div class="min-h-full pb-20">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- standardized Toast Notification -->
+    {% include 'customer/partials/toast.html' %}
+
+    <script>
+        // Sidebar Toggles
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const closeBtn = document.getElementById('close-sidebar');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        function toggleMenu() {
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        if(menuBtn) menuBtn.addEventListener('click', toggleMenu);
+        if(closeBtn) closeBtn.addEventListener('click', toggleMenu);
+        if(overlay) overlay.addEventListener('click', toggleMenu);
+
+        // Standardized Logout
+        async function handleLogout(e) {
+            e.preventDefault();
+            try {
+                await fetch('/auth/api/auth/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch (error) { window.location.href = '/login'; }
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

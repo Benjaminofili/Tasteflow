@@ -1,0 +1,135 @@
+{% extends 'admin/base.html' %}
+{% set active_page = 'customers' %}
+
+{% block title %}TasteFlow – Manage Customers{% endblock %}
+{% block header_title %}Manage Customers{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <div class="relative w-full max-w-md">
+        <input type="text" id="searchInput" onkeyup="handleCustomerSearch(event)" placeholder="Search customers by name or email..." 
+               class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white">
+        <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+    </div>
+    <button onclick="window.location.href='/admin/export/customers'" class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg font-medium transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        Export CSV
+    </button>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Phone</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Orders</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Spent</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="customers-tbody" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr>
+                    <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">Loading customers...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => fetchCustomers());
+
+    let searchTimer;
+    function handleCustomerSearch(e) {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            fetchCustomers(1, e.target.value);
+        }, 300);
+    }
+
+    document.getElementById('customers-tbody').addEventListener('click', (e) => {
+        const toggleBtn = e.target.closest('[data-toggle-id]');
+        if (toggleBtn) {
+            toggleCustomerStatus(Number(toggleBtn.dataset.toggleId), toggleBtn.dataset.toggleName);
+        }
+    });
+
+    async function fetchCustomers(page = 1, query = '') {
+        const tbody = document.getElementById('customers-tbody');
+        try {
+            const res = await fetch(`/admin/api/reports/customers?page=${page}&q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            
+            if (res.ok) {
+                if (data.customers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-sm text-gray-500">No customers found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.customers.map(item => {
+                    const c = item.user;
+                    const statusBadge = c.is_active 
+                        ? `<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>` 
+                        : `<span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>`;
+
+                    const toggleAction = c.is_active ? 'Suspend' : 'Activate';
+                    const toggleColor = c.is_active 
+                        ? 'text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300' 
+                        : 'text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300';
+
+                    return `
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">${c.id}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900 dark:text-white">${c.name}</div>
+                                <div class="text-xs text-gray-500">${c.email}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${c.phone || 'No phone'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">📦 ${item.order_count}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">₦${item.total_spent.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${statusBadge}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button data-toggle-id="${c.id}" data-toggle-name="${c.name}" class="${toggleColor} font-semibold transition-colors">
+                                    ${toggleAction}
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-sm text-red-500">Failed to load customers.</td></tr>';
+        }
+    }
+
+    async function toggleCustomerStatus(id, name) {
+        showConfirm(
+            'Confirm Status Update',
+            `Are you sure you want to toggle the account status of "${name}"?`,
+            async () => {
+                try {
+                    const res = await fetch(`/admin/users/${id}/toggle-status`, { method: 'POST' });
+                    const data = await res.json();
+                    if (res.ok) { 
+                        fetchCustomers(); 
+                        showToast(`Customer account for "${name}" updated!`, 'success');
+                    } else { 
+                        showToast(data.message || data.error || 'Failed to update status', 'error'); 
+                    }
+                } catch { 
+                    showToast('Network error. Please try again.', 'error'); 
+                }
+            },
+            'info'
+        );
+    }
+</script>
+{% endblock %}

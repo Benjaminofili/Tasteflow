@@ -1,0 +1,297 @@
+{% extends 'customer/base.html' %}
+
+{% block title %}TasteFlow – My Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Premium Profile styling */
+  .premium-input {
+    width:100%; padding:14px 16px; border-radius:16px;
+    border:1.5px solid #e2d5c3; background:#fdfaf5;
+    font-size:0.9rem; font-family:'DM Sans',sans-serif;
+    transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); outline:none;
+    color:var(--charcoal);
+  }
+  .premium-input:focus { border-color:var(--primary); background:#fff; box-shadow:0 0 0 4px rgba(200,76,46,0.08); }
+  .premium-input:disabled { background-color: #f5f0e8; color: #9ca3af; cursor: not-allowed; border-color: #eee4d8; }
+  
+  .tf-label { font-size:0.75rem; font-weight:800; margin-bottom:8px; color:#8b7a6e; display:block; letter-spacing:.05em; text-transform: uppercase; }
+
+  .profile-card {
+    background: #fff;
+    border: 1.5px solid #f0e8d8;
+    border-radius: 28px;
+    padding: 32px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+  }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .fade-up { animation: fadeUp 0.5s ease both; }
+
+  .avatar-ring {
+    width: 110px; height: 110px;
+    border: 3px solid #fdf0e8;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+  }
+  .group:hover .avatar-ring { border-color: var(--primary); transform: rotate(5deg); }
+
+  .save-btn {
+    background: var(--primary);
+    color: white;
+    padding: 16px;
+    border-radius: 18px;
+    font-weight: 800;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 25px rgba(200,76,46,0.2);
+  }
+  .save-btn:hover { background: #a83a1e; transform: translateY(-2px); box-shadow: 0 12px 30px rgba(200,76,46,0.3); }
+
+  .sec-btn {
+    background: #2C2C2C;
+    color: white;
+    padding: 16px;
+    border-radius: 18px;
+    font-weight: 800;
+    transition: all 0.3s ease;
+  }
+  .sec-btn:hover { background: #000; transform: translateY(-2px); }
+</style>
+{% endblock %}
+
+{% block header %}
+<header class="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-[#e8ddd0] shadow-sm">
+  <div class="max-w-xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="/customer/dashboard" class="text-charcoal hover:text-primary transition-colors w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-50">
+      <i class="fa-solid fa-arrow-left"></i>
+    </a>
+    <h1 class="font-display font-bold text-xl tracking-tight">Account Settings</h1>
+    <div class="flex items-center gap-2">
+      <a href="javascript:void(0)" onclick="handleLogout(event)" class="w-10 h-10 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 transition-all">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      </a>
+    </div>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<main class="max-w-xl mx-auto px-6 pt-10 pb-32 space-y-10">
+  
+  <!-- Profile Picture Section -->
+  <div class="flex flex-col items-center justify-center text-center fade-up">
+    <div class="relative group cursor-pointer" onclick="document.getElementById('profile-upload').click()">
+      <div class="avatar-ring">
+          <div id="user-avatar-container" class="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden relative shadow-inner">
+            <div id="user-initials" class="text-4xl font-display font-black text-primary">--</div>
+            <img id="user-photo" src="" class="hidden w-full h-full object-cover" alt="Profile"/>
+            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <i class="fa-solid fa-camera text-white text-xl"></i>
+            </div>
+          </div>
+      </div>
+      <input type="file" id="profile-upload" class="hidden" accept="image/*" onchange="previewImage(this)">
+      <div class="absolute -bottom-1 -right-1 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center text-primary border border-gray-100">
+          <i class="fa-solid fa-pencil text-[10px]"></i>
+      </div>
+    </div>
+    <div class="mt-5">
+        <h2 id="display-name" class="font-display text-2xl font-black tracking-tight text-charcoal">Loading...</h2>
+        <p id="display-email" class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">...</p>
+    </div>
+  </div>
+
+  <!-- Details Form -->
+  <section class="profile-card fade-up" style="animation-delay: 0.1s">
+    <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <i class="fa-solid fa-user-gear"></i>
+        </div>
+        <h3 class="font-display font-bold text-xl tracking-tight">Personal Details</h3>
+    </div>
+    
+    <form id="profile-form" onsubmit="handleProfileUpdate(event)" class="space-y-6">
+      <div class="grid grid-cols-1 gap-6">
+          <div>
+            <label class="tf-label">Full Name</label>
+            <input type="text" id="fullName" class="premium-input" placeholder="e.g. Jane Doe">
+          </div>
+          <div>
+            <label class="tf-label">Email Address</label>
+            <input type="email" id="email" class="premium-input" disabled>
+          </div>
+          <div>
+            <label class="tf-label">Phone Number</label>
+            <input type="tel" id="phone" class="premium-input" placeholder="e.g. +234 ...">
+          </div>
+          <div>
+            <label class="tf-label">Default Delivery Address</label>
+            <textarea id="address" rows="3" class="premium-input resize-none" placeholder="Where should we bring your food?"></textarea>
+          </div>
+      </div>
+
+      <button type="submit" class="save-btn w-full mt-4 flex items-center justify-center gap-3">
+        CONFIRM UPDATES
+      </button>
+    </form>
+  </section>
+
+  <!-- Security Section -->
+  <section class="profile-card fade-up" style="animation-delay: 0.2s">
+    <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 rounded-xl bg-gray-100 text-charcoal flex items-center justify-center">
+            <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h3 class="font-display font-bold text-xl tracking-tight">Security & Privacy</h3>
+    </div>
+
+    <form id="password-form" onsubmit="handlePasswordUpdate(event)" class="space-y-6">
+      <div>
+        <label class="tf-label">Current Password</label>
+        <input type="password" id="current_password" required class="premium-input">
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="tf-label">New Password</label>
+            <input type="password" id="new_password" required minlength="6" class="premium-input">
+          </div>
+          <div>
+            <label class="tf-label">Confirm New Password</label>
+            <input type="password" id="confirm_password" required minlength="6" class="premium-input">
+          </div>
+      </div>
+      <button type="submit" class="sec-btn w-full mt-4 flex items-center justify-center gap-3">
+        UPDATE PASSWORD
+      </button>
+    </form>
+  </section>
+
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function handleLogout(e) {
+      if (e) e.preventDefault();
+      try {
+          await fetch('/auth/api/auth/logout', { method: 'POST' });
+          window.location.href = '/login';
+      } catch (error) { window.location.href = '/login'; }
+  }
+
+  document.addEventListener('DOMContentLoaded', fetchProfileData);
+
+  async function fetchProfileData() {
+      try {
+          const response = await fetch('/auth/api/auth/me');
+          const data = await response.json();
+          
+          if (data.authenticated && data.user) {
+              const u = data.user;
+              document.getElementById('email').value = u.email || '';
+              document.getElementById('phone').value = u.phone || '';
+              document.getElementById('address').value = u.address || '';
+              
+              if (u.name) {
+                  document.getElementById('fullName').value = u.name;
+                  document.getElementById('display-name').textContent = u.name;
+                  const initials = u.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+                  document.getElementById('user-initials').textContent = initials;
+              }
+              document.getElementById('display-email').textContent = u.email;
+
+              const img = document.getElementById('user-photo');
+              const initialsBox = document.getElementById('user-initials');
+              if (u.profile_image) {
+                  img.src = u.profile_image;
+                  img.classList.remove('hidden');
+                  initialsBox.classList.add('hidden');
+              } else {
+                  img.classList.add('hidden');
+                  initialsBox.classList.remove('hidden');
+              }
+          }
+      } catch (error) { console.error(error); }
+  }
+
+  function previewImage(input) {
+      if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+              const img = document.getElementById('user-photo');
+              img.src = e.target.result;
+              img.classList.remove('hidden');
+              document.getElementById('user-initials').classList.add('hidden');
+          }
+          reader.readAsDataURL(input.files[0]);
+      }
+  }
+
+  async function handleProfileUpdate(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SYNCING...';
+
+      const formData = new FormData();
+      formData.append('name', document.getElementById('fullName').value);
+      formData.append('phone', document.getElementById('phone').value);
+      formData.append('address', document.getElementById('address').value);
+      
+      const fileInput = document.getElementById('profile-upload');
+      if (fileInput.files[0]) formData.append('profile_image', fileInput.files[0]);
+      
+      try {
+          const response = await fetch('/customer/profile/edit', { method: 'POST', body: formData });
+          if (response.ok) {
+              showToast('Profile modernized successfully!', 'success');
+              fetchProfileData();
+          } else {
+              showToast('Sync failed. Please try again.', 'error');
+          }
+      } catch (error) {
+          showToast('Connection error.', 'error');
+      } finally {
+          btn.disabled = false; btn.innerHTML = originalText;
+      }
+  }
+
+  async function handlePasswordUpdate(e) {
+      e.preventDefault();
+      const currentPw = document.getElementById('current_password').value;
+      const newPw = document.getElementById('new_password').value;
+      const confirmPw = document.getElementById('confirm_password').value;
+
+      if (newPw !== confirmPw) {
+          showToast("Passwords mismatch!", 'error');
+          return;
+      }
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> UPDATING...';
+
+      try {
+          const response = await fetch('/auth/api/auth/change-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ current_password: currentPw, new_password: newPw })
+          });
+          const data = await response.json();
+          if (response.ok) {
+              showToast('Security updated!', 'success');
+              document.getElementById('password-form').reset();
+          } else {
+              showToast(data.error || 'Update failed', 'error');
+          }
+      } catch (error) {
+          showToast('Network error.', 'error');
+      } finally {
+          btn.disabled = false; btn.innerHTML = originalText;
+      }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,231 @@
+{% extends 'owner/base.html' %}
+
+{% block title %}Restaurant Media | TasteFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+    .media-card {
+        background: white;
+        border: 1.5px solid #f0e8d8;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.02);
+    }
+    
+    .upload-dropzone {
+        border: 2px dashed #f0e8d8;
+        border-radius: 24px;
+        padding: 60px 40px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    .upload-dropzone:hover {
+        border-color: var(--primary);
+        background: #fffaf8;
+    }
+
+    .gallery-item {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        aspect-ratio: 1;
+        border: 1.5px solid #f0e8d8;
+        transition: all 0.4s ease;
+    }
+    .gallery-item:hover {
+        transform: scale(1.02);
+        border-color: var(--primary);
+        box-shadow: 0 10px 30px rgba(200,76,46,0.1);
+    }
+    .delete-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(4px);
+        display: flex;
+        items-center;
+        justify-center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .gallery-item:hover .delete-overlay { opacity: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 lg:px-10 py-10">
+    
+    <!-- Header -->
+    <div class="mb-12 fade-up">
+        <p class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Visual Assets</p>
+        <h1 class="font-display text-4xl font-black tracking-tight text-charcoal">Restaurant Media</h1>
+        <p class="text-gray-400 text-sm mt-2 font-medium">Manage your restaurant images and physical menu cards.</p>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-10">
+        
+        <!-- Upload Form -->
+        <div class="xl:col-span-1 fade-up" style="animation-delay: 0.1s">
+            <div class="media-card sticky top-10">
+                <h2 class="font-display text-2xl font-black text-charcoal mb-8 tracking-tight text-center">Upload Media</h2>
+                
+                <form id="media-form" onsubmit="handleMediaUpload(event)">
+                    <div onclick="document.getElementById('media-file').click()" class="upload-dropzone group mb-8">
+                        <div id="upload-prompt">
+                            <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-camera-retro text-gray-300 group-hover:text-primary transition-colors text-2xl"></i>
+                            </div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-charcoal">Select Visual Asset</p>
+                        </div>
+                        <img id="media-preview" class="absolute inset-0 w-full h-full object-cover hidden z-10" />
+                        <input type="file" id="media-file" class="hidden" accept="image/*">
+                    </div>
+
+                    <button type="submit" id="media-submit-btn" class="w-full bg-charcoal text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] hover:bg-black transition-all shadow-xl active:translate-y-1">
+                        Dispatch to Server
+                    </button>
+                </form>
+
+                <div class="mt-8 p-6 bg-cream/30 rounded-2xl border border-[#f0e8d8]">
+                     <p class="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-2">Asset Guidelines</p>
+                     <ul class="text-[10px] font-bold text-gray-500 space-y-2">
+                         <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Max size: 5MB</li>
+                         <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Format: JPG, PNG, WEBP</li>
+                         <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-500"></i> Aspect: 1:1 or 4:3 preferred</li>
+                     </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gallery -->
+        <div class="xl:col-span-2 fade-up" style="animation-delay: 0.2s">
+            <div class="media-card min-h-[600px]">
+                <div class="flex items-center justify-between mb-10">
+                    <h2 class="font-display text-2xl font-black text-charcoal tracking-tight">Gallery Vault</h2>
+                    <span id="media-count" class="px-4 py-1.5 bg-gray-50 border border-[#f0e8d8] rounded-full text-[10px] font-black text-gray-400 uppercase tracking-widest">-- Assets</span>
+                </div>
+
+                <div id="media-gallery" class="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    <!-- LOADING STATE -->
+                    <div class="gallery-item bg-gray-50 animate-pulse flex items-center justify-center text-gray-200">
+                        <i class="fa-solid fa-image text-4xl"></i>
+                    </div>
+                    <div class="gallery-item bg-gray-50 animate-pulse flex items-center justify-center text-gray-200">
+                        <i class="fa-solid fa-image text-4xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', fetchMedia);
+
+    document.getElementById('media-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const preview = document.getElementById('media-preview');
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                document.getElementById('upload-prompt').classList.add('opacity-0');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    async function fetchMedia() {
+        const gallery = document.getElementById('media-gallery');
+        try {
+            const response = await fetch('/owner/api/media');
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+
+            gallery.innerHTML = '';
+            document.getElementById('media-count').textContent = `${data.media.length} ASSETS`;
+
+            if (data.media.length === 0) {
+                gallery.innerHTML = `
+                    <div class="col-span-full py-20 text-center">
+                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fa-solid fa-images text-gray-300 text-xl"></i>
+                        </div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">Vault is empty</p>
+                    </div>
+                `;
+                return;
+            }
+
+            data.media.forEach(item => {
+                const card = `
+                    <div class="gallery-item group">
+                        <img src="${item.url}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                        <div class="delete-overlay">
+                             <button onclick="deleteMedia(${item.id})" class="w-12 h-12 bg-white text-red-500 rounded-2xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-2xl active:translate-y-1">
+                                <i class="fa-solid fa-trash-can"></i>
+                             </button>
+                        </div>
+                    </div>
+                `;
+                gallery.insertAdjacentHTML('beforeend', card);
+            });
+        } catch (error) {
+            gallery.innerHTML = `<p class="col-span-full text-center text-red-500 font-bold py-10">Sync error. Reconnecting gallery...</p>`;
+        }
+    }
+
+    async function handleMediaUpload(e) {
+        e.preventDefault();
+        const fileInput = document.getElementById('media-file');
+        if (fileInput.files.length === 0) { showToast('Select an image asset first', 'warning'); return; }
+
+        const btn = document.getElementById('media-submit-btn');
+        btn.disabled = true;
+        btn.innerHTML = 'SYNCING ASSET... <i class="fa-solid fa-spinner fa-spin ml-2"></i>';
+
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+        formData.append('media_type', 'menu_image');
+
+        try {
+            const response = await fetch('/owner/api/media', { method: 'POST', body: formData });
+            if (response.ok) {
+                showToast('Asset synchronized with vault', 'success');
+                e.target.reset();
+                document.getElementById('media-preview').classList.add('hidden');
+                document.getElementById('upload-prompt').classList.remove('opacity-0');
+                fetchMedia();
+            } else {
+                const data = await response.json();
+                showToast(data.message || 'Upload failed', 'error');
+            }
+        } catch (error) { showToast('Network sync lost', 'error'); }
+        finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Dispatch to Server';
+        }
+    }
+
+    async function deleteMedia(id) {
+        if (!confirm('Permanently purge this asset from the vault?')) return;
+        try {
+            const response = await fetch(`/owner/api/media/delete/${id}`, { 
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (response.ok) {
+                showToast('Asset purged successfully', 'success');
+                fetchMedia();
+            } else showToast('Purge operation failed', 'error');
+        } catch (error) { showToast('Sync lost', 'error'); }
+    }
+</script>
+{% endblock %}

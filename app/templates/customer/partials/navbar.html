@@ -1,0 +1,61 @@
+<nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <a href="/customer/dashboard" class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-[#C84C2E] flex items-center justify-center text-white text-xs font-bold">TF</div>
+            <span class="font-display font-bold text-xl text-[#C84C2E] hidden sm:block">TasteFlow</span>
+        </a>
+
+        <div class="hidden md:flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200">
+            <i class="fa-solid fa-location-dot text-[#C84C2E]"></i>
+            <span class="font-medium truncate max-w-[150px]">Lagos, Nigeria</span>
+        </div>
+
+        <div class="flex items-center gap-3 sm:gap-4">
+            
+            <a href="/customer/cart" class="relative p-2 text-charcoal hover:text-[#C84C2E] transition-colors">
+                <i class="fa-solid fa-basket-shopping text-lg"></i>
+                <span id="nav-cart-badge" class="absolute top-0 right-0 w-4 h-4 bg-[#C84C2E] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white hidden">0</span>
+            </a>
+
+            <div class="relative group">
+                <button class="w-9 h-9 rounded-full bg-[#C84C2E]/10 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden focus:outline-none">
+                    {% if current_user.profile_image %}
+                        <img id="nav-profile-image" src="{{ current_user.profile_image }}" alt="Profile" class="w-full h-full object-cover"/>
+                    {% else %}
+                        <div class="w-full h-full flex items-center justify-center bg-[#C84C2E] text-white font-bold text-xs uppercase">
+                            {{ current_user.name[:1] if current_user.name else 'U' }}
+                        </div>
+                    {% endif %}
+                </button>
+                <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right">
+                    <a href="/customer/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#C84C2E]"><i class="fa-regular fa-user w-5 text-center mr-1"></i> My Profile</a>
+                    <a href="/customer/orders" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#C84C2E]"><i class="fa-solid fa-receipt w-5 text-center mr-1"></i> Orders</a>
+                    <hr class="my-1 border-gray-100">
+                    <button onclick="logoutCustomer()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"><i class="fa-solid fa-arrow-right-from-bracket w-5 text-center mr-1"></i> Sign Out</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+    // Initialize Navbar Cart Badge
+    document.addEventListener('DOMContentLoaded', () => {
+        const cart = JSON.parse(localStorage.getItem('tasteflow_cart')) || [];
+        const badge = document.getElementById('nav-cart-badge');
+        if (cart.length > 0) {
+            const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
+            badge.textContent = totalQty;
+            badge.classList.remove('hidden');
+        }
+    });
+
+    async function logoutCustomer() {
+        try {
+            const res = await fetch('/auth/api/auth/logout', { method: 'POST' });
+            if (res.ok) window.location.href = '/login';
+        } catch (err) {
+            console.error('Logout failed', err);
+        }
+    }
+</script>

@@ -1,0 +1,227 @@
+{% extends 'owner/base.html' %}
+
+{% block title %}Live Orders | TasteFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+    .order-item-card {
+        background: #fff;
+        border: 1.5px solid #f0e8d8;
+        border-radius: 28px;
+        padding: 32px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .order-item-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--primary);
+        box-shadow: 0 20px 40px rgba(200,76,46,0.04);
+    }
+    
+    .status-select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23C84C2E'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1.25rem;
+    }
+
+    .filter-pill {
+        transition: all 0.3s ease;
+    }
+    .filter-pill.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 8px 20px rgba(200,76,46,0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 lg:px-10 py-10">
+    
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 fade-up">
+        <div>
+            <p class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Live Fulfillment</p>
+            <h1 class="font-display text-4xl font-black tracking-tight text-charcoal">Live Orders</h1>
+            <p class="text-gray-400 text-sm mt-2 font-medium">Monitor and orchestrate your kitchen's real-time flow.</p>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div id="filter-status-container" class="flex p-1.5 bg-white border border-[#f0e8d8] rounded-2xl shadow-sm">
+                <button onclick="setStatusFilter('all', this)" class="filter-pill active px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest">All</button>
+                <button onclick="setStatusFilter('pending', this)" class="filter-pill px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-charcoal whitespace-nowrap">Pending</button>
+                <button onclick="setStatusFilter('preparing', this)" class="filter-pill px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-charcoal whitespace-nowrap">Preparing</button>
+                <button onclick="setStatusFilter('delivered', this)" class="filter-pill px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-charcoal whitespace-nowrap">Delivered</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders Feed -->
+    <div id="orders-feed" class="space-y-6 fade-up" style="animation-delay: 0.1s">
+        <!-- Loading State -->
+        <div class="py-32 text-center bg-white rounded-[40px] border border-dashed border-[#f0e8d8] animate-pulse">
+            <i class="fa-solid fa-spinner fa-spin text-primary text-3xl mb-4"></i>
+            <p class="text-gray-400 font-black text-[10px] uppercase tracking-widest">Syncing with server...</p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let allOrders = [];
+    let currentStatusFilter = 'all';
+
+    document.addEventListener('DOMContentLoaded', fetchOrders);
+
+    async function fetchOrders() {
+        const feed = document.getElementById('orders-feed');
+        try {
+            const response = await fetch('/owner/api/orders', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
+
+            allOrders = data.orders || [];
+            renderOrders();
+        } catch (error) {
+            console.error(error);
+            feed.innerHTML = `<div class="py-20 text-center text-red-500 font-display text-xl bg-white rounded-[40px] border border-[#f0e8d8]">Network sync lost. Reconnecting...</div>`;
+        }
+    }
+
+    function setStatusFilter(status, el) {
+        currentStatusFilter = status;
+        document.querySelectorAll('.filter-pill').forEach(p => {
+            p.classList.remove('active');
+            if (p !== el) p.classList.add('text-gray-400');
+        });
+        el.classList.add('active');
+        el.classList.remove('text-gray-400');
+        renderOrders();
+    }
+
+    function renderOrders() {
+        const feed = document.getElementById('orders-feed');
+        feed.innerHTML = '';
+
+        let filtered = allOrders;
+        if (currentStatusFilter !== 'all') {
+            filtered = allOrders.filter(o => o.status.toLowerCase() === currentStatusFilter);
+        }
+
+        if (filtered.length === 0) {
+            feed.innerHTML = `
+                <div class="py-32 text-center bg-white rounded-[40px] border border-dashed border-[#f0e8d8]">
+                    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">📋</div>
+                    <h3 class="font-display text-2xl font-black text-charcoal">No active requests</h3>
+                    <p class="text-gray-400 text-sm mt-2 max-w-xs mx-auto font-medium">All cleared! Take a moment to breathe before the next rush.</p>
+                </div>
+            `;
+            return;
+        }
+
+        filtered.forEach(order => {
+            const statusStyles = {
+                'pending': 'bg-amber-50 text-amber-500 border-amber-100',
+                'preparing': 'bg-blue-50 text-blue-500 border-blue-100',
+                'out for delivery': 'bg-indigo-50 text-indigo-500 border-indigo-100',
+                'delivered': 'bg-emerald-50 text-emerald-500 border-emerald-100 opacity-70',
+                'cancelled': 'bg-rose-50 text-rose-500 border-rose-100 opacity-70'
+            };
+            
+            const currentStatus = order.status.toLowerCase();
+            const badgeStyle = statusStyles[currentStatus] || 'bg-gray-50 text-gray-500 border-gray-100';
+            const timeStr = new Date(order.order_date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const isCompleted = ['delivered', 'cancelled'].includes(currentStatus);
+
+            const card = `
+                <div class="order-item-card flex flex-col xl:flex-row gap-10 items-start xl:items-center">
+                    
+                    <!-- ID & Time -->
+                    <div class="shrink-0">
+                        <div class="flex items-center gap-3 mb-2">
+                             <span class="font-display font-black text-2xl text-charcoal tracking-tighter">#TF-${order.id}</span>
+                             <span class="px-3 py-1 text-[9px] font-black uppercase tracking-widest ${badgeStyle} rounded-full border shadow-sm">${order.status_label}</span>
+                        </div>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                             <i class="fa-regular fa-clock"></i> RECEIVED AT ${timeStr}
+                        </p>
+                    </div>
+
+                    <!-- Customer -->
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 font-black border border-gray-100 uppercase">
+                                ${order.customer_name.charAt(0)}
+                            </div>
+                            <div>
+                                <h3 class="font-display font-bold text-xl text-charcoal truncate">Customer: ${order.customer_name}</h3>
+                                <p class="text-xs font-medium text-gray-400 italic">Financial Summary provided in Dashboard Context.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="shrink-0 w-full xl:w-auto flex flex-col sm:flex-row items-center gap-4 pt-6 xl:pt-0 border-t xl:border-t-0 border-gray-50">
+                        <div class="text-3xl font-display font-black text-primary tracking-tighter sm:mr-auto xl:mr-10">₦${parseFloat(order.total_amount).toLocaleString()}</div>
+                        
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <div class="relative flex-1">
+                                <select id="status-select-${order.id}" class="status-select w-full sm:w-48 bg-white border border-[#f0e8d8] text-charcoal font-bold py-3.5 pl-5 pr-12 rounded-2xl text-[10px] uppercase tracking-widest focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm" ${isCompleted ? 'disabled' : ''}>
+                                    <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="preparing" ${currentStatus === 'preparing' ? 'selected' : ''}>Preparing</option>
+                                    <option value="out for delivery" ${currentStatus === 'out for delivery' ? 'selected' : ''}>Out for Delivery</option>
+                                    <option value="delivered" ${currentStatus === 'delivered' ? 'selected' : ''}>Delivered</option>
+                                    <option value="cancelled" ${currentStatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                                </select>
+                            </div>
+                            <button onclick="updateStatus(${order.id})" id="update-btn-${order.id}" class="bg-charcoal text-white px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl ${isCompleted ? 'hidden' : ''}">
+                                Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            feed.insertAdjacentHTML('beforeend', card);
+        });
+    }
+
+    async function updateStatus(orderId) {
+        const select = document.getElementById(`status-select-${orderId}`);
+        const btn = document.getElementById(`update-btn-${orderId}`);
+        const newStatus = select.value;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        try {
+            const response = await fetch(`/owner/orders/update/${orderId}`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (response.ok) {
+                showToast('Status propagated successfully', 'success');
+                fetchOrders();
+            } else {
+                const data = await response.json();
+                showToast(data.error || 'Propagation failed', 'error');
+                btn.disabled = false;
+                btn.innerHTML = 'Update';
+            }
+        } catch (error) {
+            showToast('Network sync lost', 'error');
+            btn.disabled = false;
+            btn.innerHTML = 'Update';
+        }
+    }
+</script>
+{% endblock %}

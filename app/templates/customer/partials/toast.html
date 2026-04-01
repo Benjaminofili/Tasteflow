@@ -1,0 +1,28 @@
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 opacity-0 pointer-events-none z-50 flex items-center gap-3 px-5 py-3.5 rounded-full shadow-2xl text-white text-sm font-medium transition-all duration-300 transform translate-y-4" style="background:#2C2C2C;">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+    <span id="toast-msg"></span>
+</div>
+
+<script>
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const msgEl = document.getElementById('toast-msg');
+        const iconEl = document.getElementById('toast-icon');
+
+        msgEl.textContent = message;
+
+        if (type === 'success') {
+            iconEl.className = 'fa-solid fa-circle-check text-emerald-400 text-lg';
+        } else {
+            iconEl.className = 'fa-solid fa-circle-xmark text-red-400 text-lg';
+        }
+
+        toast.classList.remove('opacity-0', 'translate-y-4');
+        toast.classList.add('opacity-100', 'translate-y-0');
+
+        setTimeout(() => {
+            toast.classList.remove('opacity-100', 'translate-y-0');
+            toast.classList.add('opacity-0', 'translate-y-4');
+        }, 3000);
+    }
+</script>
