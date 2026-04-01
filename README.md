@@ -53,7 +53,7 @@
 
 1.  **Clone the Repository**:
     ```bash
-    git clone https://github.com/Benjaminofili/tasteflow.git
+    git clone https://github.com/Benjaminofili/Tasteflow.git
     cd tasteflow
     ```
 
